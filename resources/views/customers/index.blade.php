@@ -46,6 +46,9 @@
                                     onclick="deleteCustomer({{ $customer->id }})" style="border:none;">
                                     <i class="fa-solid fa-trash-can fa-lg"></i>
                                 </button>
+                                <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-primary">
+                                    View Projects
+                                </a>
                             </td>
                         </tr>
 
@@ -55,7 +58,8 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="showCustomerModalLabel{{ $customer->id }}">Show Customer
+                                        <h5 class="modal-title" id="showCustomerModalLabel{{ $customer->id }}">Show
+                                            Customer
                                         </h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"
                                             aria-label="Close"></button>

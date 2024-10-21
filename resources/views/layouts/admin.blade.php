@@ -20,13 +20,17 @@
     @include('layouts.partials.header')
 
     <div id="layoutSidenav">
+
+
         <div id="layoutSidenav_nav">
             @include('layouts.partials.sidebar')
         </div>
         <div id="layoutSidenav_content">
             <div class="px-5 py-3">
+                <x-message />
                 @yield('content')
             </div>
+
             @include('layouts.partials.footer')
 
 

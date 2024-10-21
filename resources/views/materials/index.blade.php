@@ -21,9 +21,11 @@
                     <tr>
                         <th>No</th>
                         <th>Name</th>
+                        <th>Code</th>
                         <th>Symbol</th>
                         <th>Unit Price</th>
                         <th>Unit of Measurement</th>
+                        <th>Color</th>
                         <th width="200px">Action</th>
                     </tr>
                 </thead>
@@ -32,9 +34,17 @@
                         <tr>
                             <td>{{ ++$key }}</td>
                             <td>{{ $material->name }}</td>
-                            <td>{{ $material->symbol }}</td>
+                            <td>{{ $material->code }}</td>
+                            <!-- Display image for symbol -->
+                            <td>
+                                @if ($material->symbol)
+                                    <img src="{{ asset('storage/' . $material->symbol) }}" alt="Symbol" width="50">
+                                @endif
+                            </td>
+
                             <td>{{ $material->unit_price }}</td>
                             <td>{{ $material->unit_of_measurement }}</td>
+                            <td>{{ $material->color }}</td>
                             <td>
                                 <button class="btn btn-info" data-bs-toggle="modal"
                                     data-bs-target="#showMaterialModal{{ $material->id }}">
@@ -64,9 +74,17 @@
                                     </div>
                                     <div class="modal-body">
                                         <p><strong>Name:</strong> {{ $material->name }}</p>
-                                        <p><strong>Symbol:</strong> {{ $material->symbol }}</p>
+                                        <p><strong>Code:</strong> {{ $material->code }}</p>
+                                        <!-- Display symbol image -->
+                                        <p><strong>Symbol:</strong> <img src="{{ asset('storage/' . $material->symbol) }}"
+                                                alt="Symbol" width="50">
+                                        </p>
                                         <p><strong>Unit Price:</strong> {{ $material->unit_price }}</p>
                                         <p><strong>Unit of Measurement:</strong> {{ $material->unit_of_measurement }}</p>
+                                        <p><strong>Color:</strong> <span
+                                                style="background-color: {{ $material->color }}; padding: 0.2em 0.6em;">{{ $material->color }}</span>
+                                        </p>
+
                                     </div>
                                 </div>
                             </div>
@@ -84,30 +102,83 @@
                                             aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <form action="{{ route('materials.update', $material->id) }}" method="POST">
+                                        <form action="{{ route('materials.update', $material->id) }}" method="POST"
+                                            enctype="multipart/form-data">
                                             @csrf
                                             @method('PATCH')
+
                                             <div class="form-group">
                                                 <strong>Name:</strong>
                                                 <input type="text" name="name" value="{{ $material->name }}"
                                                     class="form-control" required>
                                             </div>
                                             <div class="form-group">
-                                                <strong>Symbol:</strong>
-                                                <input type="text" name="symbol" value="{{ $material->symbol }}"
-                                                    class="form-control" required>
+                                                <strong>Code:</strong>
+                                                <input type="text" name="code" value="{{ $material->code }}"
+                                                    class="form-control">
                                             </div>
+
+                                            <div class="form-group">
+                                                <strong>Symbol (Image):</strong>
+                                                <input type="file" name="symbol" class="form-control">
+                                                <small>Leave blank to keep the current symbol.</small>
+                                                @if ($material->symbol)
+                                                    <div class="mt-2">
+                                                        <img src="{{ asset('storage/' . $material->symbol) }}"
+                                                            alt="Current Symbol" width="50">
+                                                    </div>
+                                                @endif
+                                            </div>
+
                                             <div class="form-group">
                                                 <strong>Unit Price:</strong>
                                                 <input type="text" name="unit_price" value="{{ $material->unit_price }}"
                                                     class="form-control" required>
                                             </div>
+
                                             <div class="form-group">
                                                 <strong>Unit of Measurement:</strong>
-                                                <input type="text" name="unit_of_measurement"
-                                                    value="{{ $material->unit_of_measurement }}" class="form-control"
-                                                    required>
+                                                <select name="unit_of_measurement" class="form-control" required>
+                                                    <option value="kg"
+                                                        {{ $material->unit_of_measurement == 'kg' ? 'selected' : '' }}>
+                                                        Kilogram (kg)</option>
+                                                    <option value="g"
+                                                        {{ $material->unit_of_measurement == 'g' ? 'selected' : '' }}>Gram
+                                                        (g)
+                                                    </option>
+                                                    <option value="m"
+                                                        {{ $material->unit_of_measurement == 'm' ? 'selected' : '' }}>Meter
+                                                        (m)</option>
+                                                    <option value="cm"
+                                                        {{ $material->unit_of_measurement == 'cm' ? 'selected' : '' }}>
+                                                        Centimeter (cm)</option>
+                                                    <option value="liter"
+                                                        {{ $material->unit_of_measurement == 'liter' ? 'selected' : '' }}>
+                                                        Liter (L)</option>
+                                                    <option value="pcs"
+                                                        {{ $material->unit_of_measurement == 'pcs' ? 'selected' : '' }}>
+                                                        Pieces (pcs)</option>
+                                                </select>
                                             </div>
+
+                                            <div class="form-group">
+                                                <strong>Color:</strong>
+                                                <select name="color" class="form-control">
+                                                    <option value="" disabled selected>Select Color</option>
+
+                                                    <option value="white"
+                                                        {{ $material->color == 'white' ? 'selected' : '' }}>White</option>
+                                                    <option value="black"
+                                                        {{ $material->color == 'black' ? 'selected' : '' }}>Black</option>
+                                                    <option value="red"
+                                                        {{ $material->color == 'red' ? 'selected' : '' }}>Red</option>
+                                                    <option value="blue"
+                                                        {{ $material->color == 'blue' ? 'selected' : '' }}>Blue</option>
+                                                    <option value="green"
+                                                        {{ $material->color == 'green' ? 'selected' : '' }}>Green</option>
+                                                </select>
+                                            </div>
+
                                             <div class="text-center">
                                                 <button type="submit" class="btn btn-primary">Submit</button>
                                             </div>
@@ -118,6 +189,7 @@
                         </div>
                     @endforeach
                 </tbody>
+
             </table>
         </div>
     </div>
@@ -132,27 +204,64 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="{{ route('materials.store') }}" method="POST">
+                    <form action="{{ route('materials.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <!-- Material Name -->
                         <div class="form-group">
                             <strong>Name:</strong>
                             <input type="text" name="name" placeholder="Name" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <strong>Symbol:</strong>
-                            <input type="text" name="symbol" placeholder="Symbol" class="form-control" required>
+                            <strong>Code:</strong>
+                            <input type="text" name="code" placeholder="Code" class="form-control">
                         </div>
-                        <div class="form-group">
+
+
+
+
+                        <!-- Unit of Measurement -->
+                        <div class="form-group mt-3">
+                            <strong>Unit of Measurement:</strong>
+                            <select name="unit_of_measurement" class="form-control" required>
+                                <option value="" disabled selected>Select Unit of Measurement</option>
+                                <option value="kg">Kilogram (kg)</option>
+                                <option value="g">Gram (g)</option>
+                                <option value="m">Meter (m)</option>
+                                <option value="cm">Centimeter (cm)</option>
+                                <option value="liter">Liter (L)</option>
+                                <option value="pcs">Pieces (pcs)</option>
+                                <!-- Add more units as needed -->
+                            </select>
+                        </div>
+
+                        <!-- Unit Price -->
+                        <div class="form-group mt-3">
                             <strong>Unit Price:</strong>
                             <input type="text" name="unit_price" placeholder="Unit Price" class="form-control"
                                 required>
                         </div>
-                        <div class="form-group">
-                            <strong>Unit of Measurement:</strong>
-                            <input type="text" name="unit_of_measurement" placeholder="Unit of Measurement"
-                                class="form-control" required>
+                        <!-- Color (Dropdown with White and Black on Top) -->
+                        <div class="form-group mt-3">
+                            <strong>Color:</strong>
+                            <select name="color" class="form-control">
+                                <option value="" disabled selected>Select Color</option>
+                                <option value="white">White</option>
+                                <option value="black">Black</option>
+                                <option value="red">Red</option>
+                                <option value="blue">Blue</option>
+                                <option value="green">Green</option>
+                                <option value="yellow">Yellow</option>
+                                <!-- Add more colors as needed -->
+                            </select>
                         </div>
-                        <div class="text-center">
+                        <!-- Symbol (Image Upload) -->
+                        <div class="form-group mt-3">
+                            <strong>Symbol (Upload Image):</strong>
+                            <input type="file" name="symbol" class="form-control" accept="image/*">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center mt-3">
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </div>
                     </form>

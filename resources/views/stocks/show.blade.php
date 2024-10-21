@@ -30,7 +30,7 @@
                         <tr>
                             <td>{{ ++$key }}</td>
                             <td>{{ $material->name }}</td>
-                            <td>{{ $material->pivot->quantity }} {{ $material->unit_of_measurement }}</td>
+                            <td>{{ $material->pivot->quantity }} </td>
                             <td <td>
                                 <!-- Remove Button that opens the modal -->
                                 <button class="btn btn-danger" data-bs-toggle="modal"

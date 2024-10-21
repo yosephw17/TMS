@@ -54,6 +54,10 @@
                                         data-bs-target="#editUserModal{{ $user->id }}">
                                         <i class="fa-regular fa-pen-to-square"></i>
                                     </button>
+                                    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#addToTeamModal{{ $user->id }}">
+                                        <i class="fa-solid fa-users"></i> Add to Team
+                                    </button>
                                     {!! Form::open(['method' => 'DELETE', 'route' => ['users.destroy', $user->id], 'style' => 'display:inline']) !!}
                                     <button type="submit" class="btn btn-outline-danger" style="border:none;"
                                         onclick="return confirm('Are you sure you want to delete this user?')">
@@ -62,7 +66,51 @@
                                     {!! Form::close() !!}
                                 </div>
                             </td>
+
                         </tr>
+                        <!-- Add to Team Modal -->
+                        <div class="modal fade" id="addToTeamModal{{ $user->id }}" tabindex="-1" role="dialog"
+                            aria-labelledby="addToTeamModalLabel{{ $user->id }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="addToTeamModalLabel{{ $user->id }}">Add User to
+                                            Team</h5>
+                                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form action="{{ route('users.addToTeam', $user->id) }}" method="POST">
+                                            @csrf
+                                            <div class="form-group">
+                                                <label for="teamSelect">Select Teams</label>
+                                                <div id="teamSelect">
+                                                    @foreach ($teams as $team)
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                name="team_ids[]" value="{{ $team->id }}"
+                                                                id="team{{ $team->id }}"
+                                                                @if (isset($user) && $user->teams->contains($team->id)) checked @endif>
+                                                            <label class="form-check-label" for="team{{ $team->id }}">
+                                                                {{ $team->name }}
+                                                            </label>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+
+
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-success">Add to Team</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endforeach
                 </tbody>
             </table>
