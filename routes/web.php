@@ -4,13 +4,18 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\PermissionController   ;
-use App\Http\Controllers\ServiceController   ;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ServiceController;
 
-use App\Http\Controllers\ServiceDetailController   ;
-use App\Http\Controllers\CustomerController   ;
-use App\Http\Controllers\MaterialController   ;
-use App\Http\Controllers\StockController   ;
+use App\Http\Controllers\ServiceDetailController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\DailyActivityController;
+use App\Http\Controllers\ProformaController;
+use App\Http\Controllers\SettingController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -45,8 +50,22 @@ Route::middleware('auth')->group(function () {
     Route::resource('stocks', StockController::class);
     Route::post('stocks/{stock}/add-material', [StockController::class, 'addMaterial'])->name('stocks.addMaterial');
     Route::post('stocks/{stock}/remove-material/{material}', [StockController::class, 'removeMaterial'])->name('stocks.removeMaterial');
-    
+    Route::get('projects/show/{customer}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::get('projects/view/{project}', [ProjectController::class, 'showProject'])->name('projects.view');
+    Route::resource('projects', ProjectController::class);
+    Route::post('/projects/{project}/add-materials', [ProjectController::class, 'addMaterials'])->name('projects.addMaterials');
+    Route::put('/projects/{project}/materials/{material}', [ProjectController::class, 'updateMaterial'])->name('projectMaterials.update');
+    Route::delete('/projects/{project}/materials/{material}', [ProjectController::class, 'destroyMaterial'])->name('projects.materials.destroy');
+    Route::post('/users/{user}/add-to-team', [UserController::class, 'addToTeam'])->name('users.addToTeam');
+    Route::resource('teams', TeamController::class);
+    Route::post('/projects/{project}/upload-files', [ProjectController::class, 'uploadFiles'])->name('projects.uploadFiles');
+    Route::resource('daily_activities', DailyActivityController::class);
+    Route::resource('proformas', ProformaController::class);
+    Route::get('/aluminiumProfile/print/{id}', [ProformaController::class, 'print'])->name('print.aluminiumProfile');
+    Route::get('/aluminiumAccessories/print/{id}', [ProformaController::class, 'printAccessories'])->name('print.accessories');
+    Route::resource('settings', SettingController::class);
 
+    
 });
 
 require __DIR__.'/auth.php';

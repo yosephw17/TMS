@@ -9,17 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('materials', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('symbol');
-            $table->decimal('unit_price', 10, 2); 
-            $table->string('unit_of_measurement');
-            $table->timestamps();
-        });
-    }
+        public function up(): void
+        {
+            Schema::create('materials', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('code')->nullable();
+                $table->string('symbol')->nullable();
+                $table->string('color')->nullable();
+                $table->decimal('unit_price', 10, 2); 
+                $table->string('unit_of_measurement');
+                $table->timestamps();
+            });
+        }
 
     /**
      * Reverse the migrations.

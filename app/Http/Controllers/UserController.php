@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Team;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -26,9 +27,10 @@ class UserController extends Controller
         {
             
             $data = User::orderBy('id', 'DESC')->paginate(8);
-            
+            $teams = Team::all();
+
             $roles = Role::all();
-            return view('users.index', compact('data', 'roles'))
+            return view('users.index', compact('data', 'roles', 'teams'))
                 ->with('i', ($request->input('page', 1) - 1) * 5);
         }
 
@@ -82,7 +84,21 @@ class UserController extends Controller
             ->with('success', 'User updated successfully');
     }
 
+    public function addToTeam(Request $request, $userId)
+    {
+        $request->validate([
+            'team_ids' => 'required|array',   // Ensure team_ids is an array
+            'team_ids.*' => 'exists:teams,id' // Ensure each team ID exists in the teams table
+        ]);
 
+        // Find the user
+        $user = User::findOrFail($userId);
+
+        // Attach the user to the selected teams (many-to-many relationship)
+        $user->teams()->sync($request->team_ids);
+
+        return redirect()->route('users.index')->with('success', 'User added to teams successfully.');
+    }
     public function destroy($id)
     {
         User::find($id)->delete();

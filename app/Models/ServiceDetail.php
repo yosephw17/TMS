@@ -14,4 +14,8 @@ class ServiceDetail extends Model
     {
         return $this->belongsTo(Service::class);
     }
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_service_detail');
+    }
 }
