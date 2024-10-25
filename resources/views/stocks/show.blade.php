@@ -7,7 +7,7 @@
                 <h2>Stock: {{ $stock->name }} ({{ $stock->location }})</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
                     Add Material
                 </button>
             </div>
@@ -21,6 +21,7 @@
                     <tr>
                         <th>No</th>
                         <th>Material Name</th>
+                        <th>Color</th>
                         <th>Quantity</th>
                         <th width="200px">Action</th>
                     </tr>
@@ -30,6 +31,7 @@
                         <tr>
                             <td>{{ ++$key }}</td>
                             <td>{{ $material->name }}</td>
+                            <td>{{ $material->color }}</td>
                             <td>{{ $material->pivot->quantity }} </td>
                             <td <td>
                                 <!-- Remove Button that opens the modal -->
@@ -92,7 +94,10 @@
                             <strong>Select Material:</strong>
                             <select name="material_id" class="form-control" required>
                                 @foreach ($materials as $material)
-                                    <option value="{{ $material->id }}">{{ $material->name }}</option>
+                                    <option value="{{ $material->id }}">{{ $material->name }}@if ($material->color)
+                                            ({{ $material->color }})
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>

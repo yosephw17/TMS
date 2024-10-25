@@ -86,18 +86,32 @@ public function removeMaterial(Request $request, $stockId, $materialId)
 }
 
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-        ]);
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'location' => 'required|string|max:255',
+    ]);
 
-        $stock = Stock::findOrFail($id);
-        $stock->update($request->only('name', 'location'));
-
-        return redirect()->route('stocks.index')->with('success', 'Stock updated successfully.');
+    $stock = Stock::find($id);
+    if (!$stock) {
+        return redirect()->back()->with('error', 'Stock not found');
     }
+
+    $stock->update([
+        'name' => $request->name,
+        'location' => $request->location,
+    ]);
+
+    return redirect()->route('stocks.index')->with('success', 'Stock updated successfully');
+}
+    public function getMaterials(Stock $stock)
+{
+    $materials = $stock->materials()->withPivot('quantity')->get();
+
+    return response()->json($materials);
+}
+
 
     public function destroy($id)
     {
