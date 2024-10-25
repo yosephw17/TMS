@@ -158,6 +158,9 @@
                                                     <option value="pcs"
                                                         {{ $material->unit_of_measurement == 'pcs' ? 'selected' : '' }}>
                                                         Pieces (pcs)</option>
+                                                    <option value="bar"
+                                                        {{ $material->unit_of_measurement == 'bar' ? 'selected' : '' }}>
+                                                        Bar (bar)</option>
                                                 </select>
                                             </div>
 
@@ -230,6 +233,7 @@
                                 <option value="cm">Centimeter (cm)</option>
                                 <option value="liter">Liter (L)</option>
                                 <option value="pcs">Pieces (pcs)</option>
+                                <option value="bar">Bar (bar)</option>
                                 <!-- Add more units as needed -->
                             </select>
                         </div>

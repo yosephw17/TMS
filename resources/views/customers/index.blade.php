@@ -34,19 +34,20 @@
                             <td>{{ $customer->phone }}</td>
                             <td>{{ $customer->address }}</td>
                             <td>
-                                <button class="btn btn-info" data-bs-toggle="modal"
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal"
                                     data-bs-target="#showCustomerModal{{ $customer->id }}">
                                     Show
                                 </button>
-                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                     data-bs-target="#editCustomerModal{{ $customer->id }}">
-                                    Edit
+                                    <i class="fa-regular fa-pen-to-square"></i>
+
                                 </button>
                                 <button type="button" class="btn btn-outline-danger"
                                     onclick="deleteCustomer({{ $customer->id }})" style="border:none;">
                                     <i class="fa-solid fa-trash-can fa-lg"></i>
                                 </button>
-                                <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-primary">
+                                <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-sm btn-primary">
                                     View Projects
                                 </a>
                             </td>

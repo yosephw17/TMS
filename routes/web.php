@@ -16,6 +16,8 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\SellerController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -64,6 +66,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/aluminiumProfile/print/{id}', [ProformaController::class, 'print'])->name('print.aluminiumProfile');
     Route::get('/aluminiumAccessories/print/{id}', [ProformaController::class, 'printAccessories'])->name('print.accessories');
     Route::resource('settings', SettingController::class);
+    Route::resource('purchase_requests', PurchaseRequestController::class);
+    Route::post('/purchase_requests/{id}/approve', [PurchaseRequestController::class, 'approve'])->name('purchase_requests.approve');
+Route::post('/purchase_requests/{id}/decline', [PurchaseRequestController::class, 'decline'])->name('purchase_requests.decline');
+    Route::get('/api/stock/{stock}/materials', [StockController::class, 'getMaterials']);
+    Route::resource('sellers', SellerController::class);
 
     
 });

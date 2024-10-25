@@ -8,7 +8,7 @@
             </div>
             <div class="pull-right">
                 <!-- Button to trigger modal -->
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#serviceModal">
                     Add Project
                 </button>
             </div>
@@ -243,7 +243,7 @@
             <div class="tab-content" id="projectTabContent{{ $project->id }}">
                 <!-- Project Tab -->
 
-                @include('tab_components/projectTab');
+                @include('tab_components/projectTab')
 
                 @include('tab_components.quantityTab')
 

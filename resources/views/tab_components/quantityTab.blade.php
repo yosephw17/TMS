@@ -13,6 +13,7 @@
             <thead>
                 <tr>
                     <th>Material Name</th>
+                    <th>Color</th>
                     <th>Quantity</th>
                     <th>Actions</th> <!-- Actions column -->
                 </tr>
@@ -21,19 +22,22 @@
                 @foreach ($project->materials as $material)
                     <tr>
                         <td>{{ $material->name }}</td>
+                        <td>{{ $material->color }}</td>
                         <td>{{ $material->pivot->quantity }}</td>
                         <td>
                             <!-- Edit Button -->
                             <!-- Edit Button -->
-                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                 data-bs-target="#editMaterialModal{{ $material->id }}-{{ $project->id }}">
-                                Edit
+                                <i class="fa-regular fa-pen-to-square"></i>
+
                             </button>
 
                             <!-- Delete Button (with a confirmation modal) -->
                             <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
                                 data-bs-target="#deleteMaterialModal{{ $material->id }}-{{ $project->id }}">
-                                Delete
+                                <i class="fa-solid fa-trash-can fa-lg"></i>
+
                             </button>
                         </td>
                     </tr>
@@ -61,7 +65,7 @@
                         <div class="form-group">
                             <label for="quantity">Quantity</label>
                             <input type="number" name="quantity" class="form-control"
-                                value="{{ $material->pivot->quantity }}">
+                                value="{{ $material->pivot->quantity }}" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -125,11 +129,13 @@
                                         <input class="form-check-input" type="checkbox" name="materials[]"
                                             value="{{ $material->id }}" id="material{{ $material->id }}">
                                         <label class="form-check-label" for="material{{ $material->id }}">
-                                            {{ $material->name }}
+                                            {{ $material->name }} @if ($material->color)
+                                                ({{ $material->color }})
+                                            @endif
                                         </label>
                                         <!-- Quantity input for each material -->
                                         <input type="number" name="quantities[{{ $material->id }}]"
-                                            class="form-control mt-2" placeholder="Quantity" min="1">
+                                            class="form-control mt-2" placeholder="Quantity" min="1" required>
                                     </div>
                                 </div>
                             @endforeach

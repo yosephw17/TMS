@@ -32,14 +32,62 @@
                             <td>{{ $stock->name }}</td>
                             <td>{{ $stock->location }}</td>
                             <td>
-                                <a class="btn btn-info" href="{{ route('stocks.show', $stock->id) }}">
+                                <a class="btn btn-sm btn-info" href="{{ route('stocks.show', $stock->id) }}">
                                     View
                                 </a>
-                                <button type="button" class="btn btn-danger" onclick="deleteStock({{ $stock->id }})">
-                                    Delete
-                                </button>
+                                <!-- Edit Button -->
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#editStockModal-{{ $stock->id }}">
+                                    <i class="fa-regular fa-pen-to-square"></i> </button>
+
+                                <!-- Delete Button -->
+                                <form id="delete-form-{{ $stock->id }}"
+                                    action="{{ route('stocks.destroy', $stock->id) }}" method="POST"
+                                    style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="if(confirm('Are you sure you want to delete this stock?')) { document.getElementById('delete-form-{{ $stock->id }}').submit(); }">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </button>
+                                </form>
+
                             </td>
                         </tr>
+                        <!-- Edit Stock Modal -->
+                        <div class="modal fade" id="editStockModal-{{ $stock->id }}" tabindex="-1"
+                            aria-labelledby="editStockModalLabel-{{ $stock->id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editStockModalLabel-{{ $stock->id }}">Edit Stock
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form action="{{ route('stocks.update', $stock->id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="form-group">
+                                                <strong>Stock Name:</strong>
+                                                <input type="text" name="name" value="{{ $stock->name }}"
+                                                    placeholder="Stock Name" class="form-control" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <strong>Location:</strong>
+                                                <input type="text" name="location" value="{{ $stock->location }}"
+                                                    placeholder="Location" class="form-control" required>
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="submit" class="btn btn-primary">Update</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endforeach
                 </tbody>
             </table>
