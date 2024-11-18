@@ -7,7 +7,6 @@ class SellerController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
         $this->middleware('permission:manage-seller', ['only' => ['index']]);
@@ -22,7 +21,6 @@ class SellerController extends Controller
         return view('sellers.index', compact('sellers'));
     }
 
-    // Store a newly created seller in the database
     public function store(Request $request)
     {
         $request->validate([
@@ -35,7 +33,6 @@ class SellerController extends Controller
         return redirect()->route('sellers.index')->with('success', 'Seller created successfully.');
     }
 
-    // Update the specified seller in the database
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -49,7 +46,6 @@ class SellerController extends Controller
         return redirect()->route('sellers.index')->with('success', 'Seller updated successfully.');
     }
 
-    // Remove the specified seller from the database
     public function destroy($id)
     {
         Seller::findOrFail($id)->delete();

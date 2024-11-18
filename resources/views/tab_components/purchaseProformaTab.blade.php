@@ -19,7 +19,6 @@
             </ul>
 
             <div class="tab-content">
-                <!-- Aluminium Proformas Tab -->
                 <div class="tab-pane fade show active" id="aluminium{{ $project->id }}" role="tabpanel"
                     aria-labelledby="aluminium-tab{{ $project->id }}">
 
@@ -76,7 +75,6 @@
                     </div>
                 </div>
 
-                <!-- Finishing Proformas Tab -->
                 <div class="tab-pane fade" id="finishing{{ $project->id }}" role="tabpanel"
                     aria-labelledby="finishing-tab{{ $project->id }}">
                     <div class="row">

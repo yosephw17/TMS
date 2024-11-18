@@ -8,16 +8,13 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
+   
     public function run(): void
     {
         this->call([
             UserSeeder::class,
             MaterialsSeeder::class,
             RolesAndPermissionsSeeder::class,
-            // You can call other seeders here
         ]);
         
         // \App\Models\User::factory(10)->create();

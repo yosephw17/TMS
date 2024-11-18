@@ -4,7 +4,6 @@
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4>Proforma Requests</h4>
-            <!-- Button to trigger the modal -->
             @can('purchase-request-create')
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProformaRequestModal">
                     Create Purchase Request
@@ -13,7 +12,6 @@
         </div>
 
         <div class="card-body">
-            <!-- Table to show requests -->
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -51,32 +49,26 @@
                             </td>
                         </tr>
 
-                        <!-- Accordion to show details directly -->
                         <tr id="requestDetails{{ $purchaseRequest->id }}" class="collapse">
                             <td colspan="6">
                                 <div class="accordion-body">
-                                    <!-- Project Details -->
                                     <div class="mb-3">
                                         <i class="fas fa-project-diagram"></i> <strong>Project:</strong>
                                         {{ $purchaseRequest->project->name }}
                                     </div>
 
-                                    <!-- Request Type -->
                                     <div class="mb-3">
                                         <i class="fas fa-tags"></i> <strong>Type:</strong>
                                         {{ ucfirst($purchaseRequest->type) }}
                                     </div>
 
-                                    <!-- Created By -->
                                     <div class="mb-3">
                                         <i class="fas fa-user"></i> <strong>Created By:</strong>
                                         {{ $purchaseRequest->user->name }}
                                     </div>
 
-                                    <!-- Non-stock Material Details -->
                                     @if ($purchaseRequest->non_stock_name || $purchaseRequest->non_stock_price)
                                         @if (!in_array($purchaseRequest->type, ['labour', 'transport']))
-                                            <!-- Check for type -->
                                             <div class="mb-3">
                                                 <i class="fas fa-cubes"></i> <strong>Non-stock Material:</strong>
                                                 {{ $purchaseRequest->non_stock_name }}
@@ -103,7 +95,6 @@
                                             </div>
                                         @endif
 
-                                        <!-- Non-stock Material Image -->
                                         @if ($purchaseRequest->non_stock_image)
                                             <div class="mb-3">
                                                 <i class="fas fa-image"></i> <strong>Non-stock Material Image:</strong>
@@ -151,7 +142,6 @@
                                         </div>
                                     @endif
 
-                                    <!-- Approve and Decline buttons -->
                                     <div class="mt-3">
                                         <form action="{{ route('purchase_requests.approve', $purchaseRequest->id) }}"
                                             method="POST" class="d-inline">
@@ -206,7 +196,6 @@
                             </select>
                         </div>
 
-                        <!-- Type Selection Dropdown (Merged) -->
                         <div class="form-group">
                             <label for="type">Select Type</label>
                             <select name="type" id="type" class="form-control" required>
@@ -217,7 +206,6 @@
                             </select>
                         </div>
 
-                        <!-- Material Selection (Stock Materials) -->
                         <div id="material-stock-section" class="form-group" style="display: none;">
                             <label for="stock_id">Select Stock</label>
                             <select name="stock_id" id="stock_id" class="form-control">
@@ -228,7 +216,6 @@
                             </select>
 
                             <div id="materials-list">
-                                <!-- Material checkboxes will be loaded dynamically here -->
                             </div>
                         </div>
 
@@ -260,8 +247,6 @@
                             <input type="number" name="labour_transport_price" class="form-control"
                                 placeholder="Enter Labour/Transport Price" step="0.001" min="0">
                         </div>
-
-                        <!-- Submit Button -->
                         <div class="text-center mt-4">
                             <button type="submit" class="btn btn-primary">Submit Request</button>
                         </div>
@@ -280,7 +265,6 @@
             const stockSelect = document.getElementById('stock_id');
             const materialsList = document.getElementById('materials-list');
 
-            // Show/hide sections based on type selection
             typeField.addEventListener('change', function() {
                 const selectedType = typeField.value;
 
@@ -290,7 +274,6 @@
                 labourTransportSection.style.display = (selectedType === 'labour' || selectedType ===
                     'transport') ? 'block' : 'none';
 
-                // Adjust required attributes based on visible inputs
                 document.querySelectorAll(
                         '#material-stock-section input, #labour-transport-section input, #material-non-stock-section input'
                     )
@@ -299,7 +282,6 @@
                     });
             });
 
-            // Load materials from the selected stock dynamically
             stockSelect.addEventListener('change', function() {
                 const stockId = stockSelect.value;
 
@@ -307,7 +289,7 @@
                     fetch(`/api/stock/${stockId}/materials`)
                         .then(response => response.json())
                         .then(materials => {
-                            materialsList.innerHTML = ''; // Clear the previous list
+                            materialsList.innerHTML = '';
 
                             materials.forEach(material => {
                                 const materialItem = `
@@ -321,11 +303,10 @@
                         })
                         .catch(error => console.error('Error fetching materials:', error));
                 } else {
-                    materialsList.innerHTML = ''; // Clear materials list if no stock is selected
+                    materialsList.innerHTML = '';
                 }
             });
 
-            // Trigger initial change event on page load to display the correct sections
             typeField.dispatchEvent(new Event('change'));
         });
     </script>

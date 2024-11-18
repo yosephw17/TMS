@@ -24,7 +24,7 @@ class Proforma extends Model
     ];
     protected $casts = [
         
-        'date' => 'date', // for proformas
+        'date' => 'date', 
     ];
     
     public function project()

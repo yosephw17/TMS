@@ -4,7 +4,6 @@
     <div class="container">
         <h1>Company Information Settings</h1>
 
-        <!-- Button to trigger Add Company Info Modal -->
         {{-- @can('setting-create')
             <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addCompanyInfoModal">
                 Add Company Info
@@ -19,7 +18,6 @@
                         <div class="card-header d-flex justify-content-between align-items-center bg-light">
                             <h5 class="mb-0">{{ $companyInfo->name }}</h5>
                             <div>
-                                <!-- Edit Button -->
                                 @can('setting-update')
                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                         data-bs-target="#editCompanyInfoModal{{ $companyInfo->id }}">
@@ -111,51 +109,37 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="modal-body">
-                                    <!-- Form fields for editing company info -->
 
-                                    <!-- Name -->
                                     <div class="mb-3">
                                         <label for="name" class="form-label">Company Name</label>
                                         <input type="text" name="name" class="form-control" id="name"
                                             value="{{ $companyInfo->name }}" required>
                                     </div>
-
-                                    <!-- Phone -->
                                     <div class="mb-3">
                                         <label for="phone" class="form-label">Phone</label>
                                         <input type="text" name="phone" class="form-control" id="phone"
                                             value="{{ $companyInfo->phone }}" required>
                                     </div>
-
-                                    <!-- Fax -->
                                     <div class="mb-3">
                                         <label for="fax" class="form-label">Fax</label>
                                         <input type="text" name="fax" class="form-control" id="fax"
                                             value="{{ $companyInfo->fax }}">
                                     </div>
-
-                                    <!-- po-box -->
                                     <div class="mb-3">
                                         <label for="po_box" class="form-label">Po-box</label>
                                         <input type="text" name="po_box" class="form-control" id="po_box"
                                             value="{{ $companyInfo->po_box }}">
                                     </div>
-
-                                    <!-- Email -->
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
                                         <input type="email" name="email" class="form-control" id="email"
                                             value="{{ $companyInfo->email }}" required>
                                     </div>
-
-                                    <!-- Motto -->
                                     <div class="mb-3">
                                         <label for="motto" class="form-label">Motto</label>
                                         <input type="text" name="motto" class="form-control" id="motto"
                                             value="{{ $companyInfo->motto }}">
                                     </div>
-
-                                    <!-- Logo Upload -->
                                     <div class="mb-3">
                                         <label for="logo" class="form-label">Company Logo</label>
                                         <input type="file" name="logo" class="form-control" id="logo">

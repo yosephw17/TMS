@@ -15,14 +15,12 @@ class DailyActivityController extends Controller
 }
     public function store(Request $request)
     {
-        // Validate the incoming request
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'description' => 'required|string',
             'user_id' => 'required|exists:users,id',
         ]);
 
-        // Create new daily activity
         DailyActivity::create([
             'project_id' => $request->project_id,
             'description' => $request->description,

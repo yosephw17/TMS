@@ -49,17 +49,15 @@ class StockController extends Controller
     public function addMaterial(Request $request, $id)
     {
         $request->validate([
-            'materials' => 'required|array|min:1', // Ensure at least one material is selected
-            'materials.*' => 'exists:materials,id', // Validate each material ID exists
-            'quantities' => 'required|array', // Ensure quantities array is provided
+            'materials' => 'required|array|min:1', 
+            'materials.*' => 'exists:materials,id', 
+            'quantities' => 'required|array', 
         ]);
     
-        $selectedMaterials = $request->input('materials'); // Get selected material IDs
-    
-        // Validate only quantities for selected materials
+        $selectedMaterials = $request->input('materials');   
         foreach ($selectedMaterials as $materialId) {
             $request->validate([
-                "quantities.$materialId" => 'required|integer|min:1', // Validate quantity for each selected material
+                "quantities.$materialId" => 'required|integer|min:1', 
             ]);
         }
     
@@ -68,14 +66,11 @@ class StockController extends Controller
         foreach ($selectedMaterials as $materialId) {
             $quantity = $request->input("quantities.$materialId");
     
-            // Check if the material is already attached to this stock
             if ($stock->materials()->where('material_id', $materialId)->exists()) {
-                // Update the existing quantity
                 $existingQuantity = $stock->materials()->where('material_id', $materialId)->first()->pivot->quantity;
                 $newQuantity = $existingQuantity + $quantity;
                 $stock->materials()->updateExistingPivot($materialId, ['quantity' => $newQuantity]);
             } else {
-                // Attach the material with the new quantity
                 $stock->materials()->attach($materialId, ['quantity' => $quantity]);
             }
         }

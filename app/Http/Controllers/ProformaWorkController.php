@@ -10,7 +10,6 @@ class ProformaWorkController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
         $this->middleware('permission:proforma-work-create', ['only' => ['store']]);
@@ -20,7 +19,6 @@ class ProformaWorkController extends Controller
     public function store(Request $request)
     {
 
-        // Validate main proforma data
         $request->validate([
             'project_id' => 'required|integer|exists:projects,id',
             'customer_id' => 'required|integer|exists:customers,id',
@@ -44,16 +42,13 @@ class ProformaWorkController extends Controller
             return $work['total'];
         }, $request->works));
     
-        // Calculate after VAT total
         $vat_amount = ($before_vat_total * $request->vat_percentage) / 100;
         $after_vat_total = $before_vat_total + $vat_amount;
         if ($request->discount > $after_vat_total) {
-            // Throw an error or handle the case where the discount is larger
             return redirect()->back()->with('error', 'The discount cannot be larger than the after VAT total.');
         }
         else
     $final_total=$after_vat_total-$request->discount;
-        // Create the main Proforma record
         $proforma = Proforma::create([
             'project_id' => $request->project_id,
             'customer_id' => $request->customer_id,
@@ -86,7 +81,6 @@ class ProformaWorkController extends Controller
     
     public function update(Request $request, $id)
     {
-        // Validate the request
         $request->validate([
             'type' => 'required|string',
             'ref_no' => 'required|string',
@@ -98,7 +92,6 @@ class ProformaWorkController extends Controller
             'works.*.total' => 'nullable|numeric',
         ]);
     
-        // Find the proforma by ID
         $proforma = Proforma::findOrFail($id);
         
         // Update the proforma fields
@@ -128,7 +121,7 @@ class ProformaWorkController extends Controller
             $workEntry->work_amount = $work['amount'];
             $workEntry->work_quantity = $work['quantity'];
             $workEntry->work_total = $work['total'] ?? 0;
-            $workEntry->proforma_id = $proforma->id; // Assuming work_proforma_id is the foreign key
+            $workEntry->proforma_id = $proforma->id; 
             $workEntry->save();
         }
     

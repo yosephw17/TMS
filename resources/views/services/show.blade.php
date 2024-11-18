@@ -4,7 +4,6 @@
     <div class="card mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $service->name }}</h4>
-            <!-- Change this to the appropriate permission if necessary -->
             @can('service-detail-create')
                 <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addSpecificServiceModal">
                     <i class="bi bi-plus-circle me-2"></i>Add Specific Service
@@ -52,7 +51,6 @@
                             <strong>{{ $detail->detail_name }}</strong>: {{ $detail->description }}
                             <div>
                                 <!-- Edit Button -->
-                                <!-- Adjust this permission as needed -->
                                 @can('service-detail-update')
                                     <button class="btn btn-outline-primary" data-bs-toggle="modal"
                                         data-bs-target="#editSpecificServiceModal{{ $detail->id }}">
@@ -61,7 +59,6 @@
                                 @endcan
 
                                 <!-- Delete Button -->
-                                <!-- Adjust this permission as needed -->
                                 {!! Form::open([
                                     'route' => ['service-details.destroy', $detail->id],
                                     'method' => 'DELETE',

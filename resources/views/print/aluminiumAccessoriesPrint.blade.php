@@ -43,12 +43,10 @@
             height: 120px;
         }
 
-        /* Company and Client Details Side by Side */
         .company-details,
         .client-details {
             display: inline-block;
             width: 48%;
-            /* Adjust the width as needed */
             vertical-align: top;
             margin-bottom: 20px;
         }
@@ -127,7 +125,6 @@
             color: #555;
         }
 
-        /* QR Code styling */
         .qr-code {
             position: relative;
             left: 20px;
@@ -205,7 +202,6 @@
             </ul>
         </footer>
 
-        <!-- QR Code positioned at the bottom right corner -->
         <img src="{{ asset('images\qr-code.png') }}" alt="QR Code" class="qr-code" />
 
     </div>

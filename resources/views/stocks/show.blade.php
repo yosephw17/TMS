@@ -36,7 +36,6 @@
                             <td>{{ $material->color }}</td>
                             <td>{{ $material->pivot->quantity }} </td>
                             <td <td>
-                                <!-- Remove Button that opens the modal -->
                                 @can('stock-remove-material')
                                     <button class="btn btn-danger" data-bs-toggle="modal"
                                         data-bs-target="#removeMaterialModal{{ $material->id }}">
@@ -100,7 +99,6 @@
                                 @foreach ($materials as $material)
                                     <div class="col-md-12">
                                         <div class="form-check">
-                                            <!-- Checkbox for selecting the material -->
                                             <input class="form-check-input" type="checkbox" name="materials[]"
                                                 value="{{ $material->id }}" id="material{{ $material->id }}">
                                             <label class="form-check-label" for="material{{ $material->id }}">
@@ -109,7 +107,6 @@
                                                     ({{ $material->color }})
                                                 @endif
                                             </label>
-                                            <!-- Quantity input for each material -->
                                             <input type="number" name="quantities[{{ $material->id }}]"
                                                 class="form-control mt-2" placeholder="Quantity" min="1">
                                         </div>

@@ -3,14 +3,12 @@
      aria-labelledby="project-tab{{ $project->id }}">
      <div class="mt-3">
 
-         <!-- Starting Date -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Starting Date:</strong>
              <p class="lead">{{ \Carbon\Carbon::parse($project->starting_date)->format('F d, Y') }}
              </p>
          </div>
 
-         <!-- Ending Date (Ongoing if null) -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Ending Date:</strong>
              <p class="lead">
@@ -18,19 +16,16 @@
              </p>
          </div>
 
-         <!-- Description -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Description:</strong>
              <p class="lead">{{ $project->description }}</p>
          </div>
 
-         <!-- Location -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Location:</strong>
              <p class="lead">{{ $project->location }}</p>
          </div>
 
-         <!-- Services (if any) -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Services Included:</strong>
              @if ($project->serviceDetails->count() > 0)
@@ -47,7 +42,6 @@
              @endif
          </div>
 
-         <!-- Status -->
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Status:</strong>
              <p class="lead">

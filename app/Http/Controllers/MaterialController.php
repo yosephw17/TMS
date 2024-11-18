@@ -7,13 +7,10 @@ use Illuminate\Http\Request;
 
 class MaterialController extends Controller
 {
-    // Display a listing of the resource
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
-        // Apply permission middleware for specific actions
         $this->middleware('permission:manage-material', ['only' => ['index']]);
         $this->middleware('permission:material-view', ['only' => ['show']]);
         $this->middleware('permission:material-create', ['only' => ['create', 'store']]);
@@ -68,10 +65,9 @@ class MaterialController extends Controller
             'unit_price' => 'required|numeric',
             'unit_of_measurement' => 'required|string|max:255',
             'type' => 'required|string|max:255',
-            'color' => 'nullable|string|max:255', // Validate the color field
+            'color' => 'nullable|string|max:255', 
         ]);
     
-        // Update the material's name, unit price, unit of measurement, and color
         $material->name = $request->name;
         $material->code = $request->code;
         $material->unit_price = $request->unit_price;
@@ -79,21 +75,17 @@ class MaterialController extends Controller
         $material->type = $request->type;
         $material->color = $request->color;
     
-        // Handle the symbol (image) upload
         if ($request->hasFile('symbol')) {
-            // Store the new image and update the symbol field
             $imagePath = $request->file('symbol')->store('materials', 'public'); 
             $material->symbol = $imagePath;
         }
     
-        // Save the changes to the material
         $material->save();
     
         return redirect()->route('materials.index')->with('success', 'Material updated successfully.');
     }
     
 
-    // Remove the specified resource from storage
     public function destroy(Material $material)
     {
         $material->delete();

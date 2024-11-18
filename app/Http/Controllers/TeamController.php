@@ -7,7 +7,6 @@ class TeamController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
         $this->middleware('permission:manage-team', ['only' => ['index']]);

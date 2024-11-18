@@ -41,7 +41,6 @@
             width: 120px;
         }
 
-        /* Flexbox for company and project details */
         .details-container {
             display: flex;
             justify-content: space-between;
@@ -51,7 +50,6 @@
         .company-details,
         .project-details {
             width: 48%;
-            /* Adjusts the width of each section */
         }
 
         .company-details p,
@@ -144,7 +142,6 @@
             @endif
         </header>
 
-        <!-- Flexbox container for company and project details -->
         <div class="details-container">
             <div class="company-details">
                 <p><strong>{{ $companyInfo->name }}</strong></p>

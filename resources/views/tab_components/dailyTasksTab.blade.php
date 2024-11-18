@@ -4,7 +4,6 @@
     <div>
         <h5>Daily Tasks for Project: {{ $project->name }}</h5>
 
-        <!-- Form to Add New Task -->
         <form action="{{ route('daily_activities.store') }}" method="POST">
             @csrf
             <div class="form-group">
@@ -18,7 +17,6 @@
             @endcan
         </form>
 
-        <!-- Display Existing Tasks -->
         <h5 class="mt-4">Existing Tasks</h5>
         @if ($dailyActivities->count() > 0)
             <ul class="list-group">

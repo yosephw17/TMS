@@ -24,7 +24,7 @@
                     <th>Material Name</th>
                     <th>Color</th>
                     <th>Quantity</th>
-                    <th>Actions</th> <!-- Actions column -->
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,8 +34,7 @@
                         <td>{{ $material->color }}</td>
                         <td>{{ $material->pivot->quantity }}</td>
                         <td>
-                            <!-- Edit Button -->
-                            <!-- Edit Button -->
+
                             @can('project-material-edit')
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                     data-bs-target="#editMaterialModal{{ $material->id }}-{{ $project->id }}">
@@ -44,7 +43,6 @@
                                 </button>
                             @endcan
 
-                            <!-- Delete Button (with a confirmation modal) -->
                             @can('project-material-delete')
                                 <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
                                     data-bs-target="#deleteMaterialModal{{ $material->id }}-{{ $project->id }}">
@@ -146,7 +144,6 @@
                                                 ({{ $material->color }})
                                             @endif
                                         </label>
-                                        <!-- Quantity input for each material -->
                                         <input type="number" name="quantities[{{ $material->id }}]"
                                             class="form-control mt-2" placeholder="Quantity" min="1">
                                     </div>
