@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ChartController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
@@ -18,6 +21,8 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\ProformaImageController;
+use App\Http\Controllers\ProformaWorkController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -33,11 +38,15 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/dashboard', function () {
-    return view('welcome');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [HomeController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/chart-data', [ChartController::class, 'getMonthlyRegistrations']);
+    Route::get('/customers-chart-data', [ChartController::class, 'getCustomers']);
+    Route::get('/projects-chart-data', [ChartController::class, 'getChartData'])->middleware('auth');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -65,13 +74,19 @@ Route::middleware('auth')->group(function () {
     Route::resource('proformas', ProformaController::class);
     Route::get('/aluminiumProfile/print/{id}', [ProformaController::class, 'print'])->name('print.aluminiumProfile');
     Route::get('/aluminiumAccessories/print/{id}', [ProformaController::class, 'printAccessories'])->name('print.accessories');
+    Route::get('/work/print/{id}', [ProformaController::class, 'printWork'])->name('print.work');
     Route::resource('settings', SettingController::class);
     Route::resource('purchase_requests', PurchaseRequestController::class);
     Route::post('/purchase_requests/{id}/approve', [PurchaseRequestController::class, 'approve'])->name('purchase_requests.approve');
 Route::post('/purchase_requests/{id}/decline', [PurchaseRequestController::class, 'decline'])->name('purchase_requests.decline');
     Route::get('/api/stock/{stock}/materials', [StockController::class, 'getMaterials']);
     Route::resource('sellers', SellerController::class);
-
+    Route::get('/proforma_images/{seller_id}', [ProformaImageController::class, 'index'])->name('proforma_images.index');
+    Route::resource('proforma_images', ProformaImageController::class)->except(['index']);
+    Route::post('proforma_images/{id}/approve', [ProformaImageController::class, 'approve'])->name('proforma_images.approve');
+    Route::post('proforma_images/{id}/decline', [ProformaImageController::class, 'decline'])->name('proforma_images.decline');
+    Route::get('/projects/{project}/materials/print', [ProjectController::class, 'printMaterials'])->name('projects.materials.print');
+    Route::resource('proforma_work', ProformaWorkController::class);
     
 });
 

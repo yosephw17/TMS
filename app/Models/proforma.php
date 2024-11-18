@@ -42,4 +42,8 @@ class Proforma extends Model
                     ->withPivot('quantity', 'total_price')
                     ->withTimestamps();
     }
+    public function works()
+    {
+        return $this->hasMany(ProformaWork::class);
+    }
 }

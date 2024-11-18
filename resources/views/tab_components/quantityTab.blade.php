@@ -1,10 +1,19 @@
 <div class="tab-pane fade" id="quantity{{ $project->id }}" role="tabpanel"
     aria-labelledby="quantity-tab{{ $project->id }}">
     <div class="mt-3">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-            data-bs-target="#selectMaterialsModal{{ $project->id }}">
-            Add Materials
+        @can('material-create')
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                data-bs-target="#selectMaterialsModal{{ $project->id }}">
+                Add Materials
+            @endcan
         </button>
+        @can('project-material-print')
+            <a href="{{ route('projects.materials.print', $project->id) }}" class="btn btn-secondary" target="_blank">
+                <i class="fas fa-print"></i>
+                Print
+            </a>
+        @endcan
+
     </div>
 
     <div class="mt-3">
@@ -27,18 +36,22 @@
                         <td>
                             <!-- Edit Button -->
                             <!-- Edit Button -->
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#editMaterialModal{{ $material->id }}-{{ $project->id }}">
-                                <i class="fa-regular fa-pen-to-square"></i>
+                            @can('project-material-edit')
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#editMaterialModal{{ $material->id }}-{{ $project->id }}">
+                                    <i class="fa-regular fa-pen-to-square"></i>
 
-                            </button>
+                                </button>
+                            @endcan
 
                             <!-- Delete Button (with a confirmation modal) -->
-                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                                data-bs-target="#deleteMaterialModal{{ $material->id }}-{{ $project->id }}">
-                                <i class="fa-solid fa-trash-can fa-lg"></i>
+                            @can('project-material-delete')
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteMaterialModal{{ $material->id }}-{{ $project->id }}">
+                                    <i class="fa-solid fa-trash-can fa-lg"></i>
 
-                            </button>
+                                </button>
+                            @endcan
                         </td>
                     </tr>
                 @endforeach
@@ -65,7 +78,7 @@
                         <div class="form-group">
                             <label for="quantity">Quantity</label>
                             <input type="number" name="quantity" class="form-control"
-                                value="{{ $material->pivot->quantity }}" required>
+                                value="{{ $material->pivot->quantity }}">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -135,7 +148,7 @@
                                         </label>
                                         <!-- Quantity input for each material -->
                                         <input type="number" name="quantities[{{ $material->id }}]"
-                                            class="form-control mt-2" placeholder="Quantity" min="1" required>
+                                            class="form-control mt-2" placeholder="Quantity" min="1">
                                     </div>
                                 </div>
                             @endforeach

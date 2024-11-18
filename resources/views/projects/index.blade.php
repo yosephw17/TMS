@@ -26,7 +26,7 @@
             <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
                 <h4>Pending Projects</h4>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table id="datatablesSimple" class="table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -49,8 +49,10 @@
                                         <span class="badge bg-warning">{{ ucfirst($project->status) }}</span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('projects.view', $project->id) }}"
-                                            class="btn btn-sm btn-primary">View</a>
+                                        @can('project-view')
+                                            <a href="{{ route('projects.view', $project->id) }}"
+                                                class="btn btn-sm btn-primary">View</a>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty
@@ -67,7 +69,7 @@
             <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
                 <h4>Completed Projects</h4>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table id="datatablesSimple" class="table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -88,9 +90,12 @@
                                     <td>
                                         <span class="badge bg-success">{{ ucfirst($project->status) }}</span>
                                     </td>
+
                                     <td>
-                                        <a href="{{ route('projects.view', $project->id) }}"
-                                            class="btn btn-sm btn-primary">View</a>
+                                        @can('project-view')
+                                            <a href="{{ route('projects.view', $project->id) }}"
+                                                class="btn btn-sm btn-primary">View</a>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty
@@ -107,7 +112,7 @@
             <div class="tab-pane fade" id="canceled" role="tabpanel" aria-labelledby="canceled-tab">
                 <h4>Canceled Projects</h4>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table id="datatablesSimple" class="table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -130,8 +135,10 @@
                                         <span class="badge bg-danger">{{ ucfirst($project->status) }}</span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('projects.view', $project->id) }}"
-                                            class="btn btn-sm btn-primary">View</a>
+                                        @can('project-view')
+                                            <a href="{{ route('projects.view', $project->id) }}"
+                                                class="btn btn-sm btn-primary">View</a>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty

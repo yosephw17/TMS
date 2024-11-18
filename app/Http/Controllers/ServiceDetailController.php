@@ -6,9 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\ServiceDetail;
 class ServiceDetailController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-service-detail', ['only' => ['index']]);
+        $this->middleware('permission:service-detail-view', ['only' => ['show']]);
+        $this->middleware('permission:service-detail-create', ['only' => ['store']]);
+        $this->middleware('permission:service-detail-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:service-detail-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         //

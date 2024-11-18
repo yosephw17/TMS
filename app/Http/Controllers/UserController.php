@@ -11,6 +11,30 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-user', ['only' => ['index']]);
+        $this->middleware('permission:user-view', ['only' => ['show']]);
+        $this->middleware('permission:user-create', ['only' => ['store']]);
+        $this->middleware('permission:user-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:user-delete', ['only' => ['destroy']]);
+        $this->middleware('permission:user-assign-team', ['only' => ['addToTeam']]);
+    }
+    
+    public function index(Request $request)
+    {
+        
+        $data = User::orderBy('id', 'DESC')->paginate(8);
+        $teams = Team::all();
+        
+        $roles = Role::all();
+        return view('users.index', compact('data', 'roles', 'teams'))
+        ->with('i', ($request->input('page', 1) - 1) * 5);
+    }
+    
     public function edit($id)
     {
         $user = User::find($id);
@@ -22,26 +46,13 @@ class UserController extends Controller
         ]);
     }
 
-        
-        public function index(Request $request)
-        {
-            
-            $data = User::orderBy('id', 'DESC')->paginate(8);
-            $teams = Team::all();
-
-            $roles = Role::all();
-            return view('users.index', compact('data', 'roles', 'teams'))
-                ->with('i', ($request->input('page', 1) - 1) * 5);
-        }
-
-
 
    public function store(Request $request)
 {
     $this->validate($request, [
         'name' => 'required',
         'email' => 'required|email|unique:users,email',
-        'password' => 'required|same:confirm-password',
+        'password' => 'required|same:confirm-password|min:4',
         'roles' => 'required|array',
         'roles.*' => 'exists:roles,name',
         'phone' => 'required|string|max:15', // Add validation for phone

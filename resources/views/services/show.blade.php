@@ -5,9 +5,11 @@
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $service->name }}</h4>
             <!-- Change this to the appropriate permission if necessary -->
-            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addSpecificServiceModal">
-                <i class="bi bi-plus-circle me-2"></i>Add Specific Service
-            </button>
+            @can('service-detail-create')
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addSpecificServiceModal">
+                    <i class="bi bi-plus-circle me-2"></i>Add Specific Service
+                </button>
+            @endcan
 
             <!-- Add Specific Service Modal -->
             <div class="modal fade" id="addSpecificServiceModal" tabindex="-1" aria-labelledby="addSpecificServiceModalLabel"
@@ -51,10 +53,12 @@
                             <div>
                                 <!-- Edit Button -->
                                 <!-- Adjust this permission as needed -->
-                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editSpecificServiceModal{{ $detail->id }}">
-                                    <i class="fa-regular fa-pen-to-square fa-lg"></i>
-                                </button>
+                                @can('service-detail-update')
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editSpecificServiceModal{{ $detail->id }}">
+                                        <i class="fa-regular fa-pen-to-square fa-lg"></i>
+                                    </button>
+                                @endcan
 
                                 <!-- Delete Button -->
                                 <!-- Adjust this permission as needed -->
@@ -63,9 +67,11 @@
                                     'method' => 'DELETE',
                                     'style' => 'display:inline',
                                 ]) !!}
-                                <button type="submit" class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Are you sure you want to delete this specific service?');"><i
-                                        class="fa-solid fa-trash-can fa-lg"></i></button>
+                                @can('service-detail-delete')
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this specific service?');"><i
+                                            class="fa-solid fa-trash-can fa-lg"></i></button>
+                                @endcan
                                 {!! Form::close() !!}
                             </div>
                         </li>

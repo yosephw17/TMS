@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Proforma;
+use App\Models\ProformaWork;
 use App\Models\Project;
 use App\Models\Material;
 use App\Models\CompanyInfo;
@@ -9,6 +10,19 @@ use Illuminate\Http\Request;
 
 class ProformaController extends Controller
 {
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        // Apply permission middleware for specific actions
+        $this->middleware('permission:manage-proforma', ['only' => ['index']]);
+        $this->middleware('permission:proforma-view', ['only' => ['show']]);
+        $this->middleware('permission:proforma-create', ['only' => ['create', 'store','storeAccessoriesProforma', 'updateAccessoriesProforma']]);
+        $this->middleware('permission:proforma-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:proforma-delete', ['only' => ['destroy','destroyAccessoriesProforma']]);
+        $this->middleware('permission:proforma-print', ['only' => ['print','printAccessories','printWork']]);
+    }
     // Display list of proformas
     public function index(Project $project)
     {
@@ -96,7 +110,7 @@ class ProformaController extends Controller
         }
         
 
-        return redirect()->route('projects.show', $request->input('project_id'))
+        return redirect()->route('projects.view', $request->input('project_id'))
                          ->with('success', 'Proforma created successfully.');
     }
 
@@ -191,7 +205,7 @@ class ProformaController extends Controller
             $proforma->materials()->detach();
         }
     
-        return redirect()->route('projects.show', $request->input('project_id'))
+        return redirect()->route('projects.view', $request->input('project_id'))
                          ->with('success', 'Proforma updated successfully.');
     }
     public function print($id)
@@ -206,6 +220,13 @@ class ProformaController extends Controller
     $proforma = Proforma::with('customer', 'materials')->findOrFail($id);
     
     return view('print.aluminiumAccessoriesPrint', compact('proforma','companyInfo'));
+}
+    public function printWork($id)
+{
+    $companyInfo = CompanyInfo::find(3);
+    $proforma = Proforma::with('customer','works')->findOrFail($id);
+    
+    return view('print.workPrint', compact('proforma','companyInfo'));
 }
 
 public function storeAccessoriesProforma(Request $request)
@@ -247,10 +268,10 @@ public function storeAccessoriesProforma(Request $request)
 
     return redirect()->route('accessoriesProformas.index', ['project_id' => $request->project_id])->with('success', 'Proforma created successfully.');
 }
-
 // Function to update an Aluminium Accessories Proforma
 public function updateAccessoriesProforma(Request $request, Proforma $proforma)
 {
+    
     $validated = $request->validate([
         'ref_no' => 'required|string|max:255',
         'date' => 'required|date',

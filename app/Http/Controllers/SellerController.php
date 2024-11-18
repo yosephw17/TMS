@@ -5,7 +5,17 @@ use App\Models\Seller;
 use Illuminate\Http\Request;
 class SellerController extends Controller
 {
-    // Display a listing of sellers
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-seller', ['only' => ['index']]);
+        $this->middleware('permission:seller-view', ['only' => ['show']]);
+        $this->middleware('permission:seller-create', ['only' => ['store']]);
+        $this->middleware('permission:seller-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:seller-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         $sellers = Seller::all();

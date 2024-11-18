@@ -9,10 +9,12 @@
                         <h2>Services</h2>
                     </div>
                     <div class="pull-right mb-3">
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                            data-bs-target="#createServiceModal">
-                            Create New Service
-                        </button>
+                        @can('service-create')
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                data-bs-target="#createServiceModal">
+                                Create New Service
+                            </button>
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -33,14 +35,17 @@
                         <td>{{ $service->details }}</td>
                         <td>
                             <div class="btn-group" role="group" aria-label="Service Actions">
-                                <button class="btn btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#serviceModal{{ $service->id }}"
-                                    onclick="showServiceDetails({{ $service->id }})">Show</button>
-
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editServiceModal{{ $service->id }}">
-                                    <i class="fa-regular fa-pen-to-square fa-lg"></i>
-                                </button>
+                                @can('service-view')
+                                    <button class="btn btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#serviceModal{{ $service->id }}"
+                                        onclick="showServiceDetails({{ $service->id }})">Show</button>
+                                @endcan
+                                @can('service-update')
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editServiceModal{{ $service->id }}">
+                                        <i class="fa-regular fa-pen-to-square fa-lg"></i>
+                                    </button>
+                                @endcan
                                 {{-- <button type="button" class="btn btn-outline-success" data-bs-toggle="modal"
                                     data-bs-target="#addServiceDetailModal{{ $service->id }}">
                                     Add Specific Service
@@ -51,17 +56,21 @@
                                     'route' => ['services.destroy', $service->id],
                                     'style' => 'display:inline',
                                 ]) !!}
-                                <button type="submit" class="btn btn-outline-danger" style="border:none;"
-                                    onclick="return confirm('Are you sure you want to delete the service?');">
-                                    <i class="fa-solid fa-trash-can fa-lg"></i>
-                                </button>
+                                @can('service-delete')
+                                    <button type="submit" class="btn btn-outline-danger" style="border:none;"
+                                        onclick="return confirm('Are you sure you want to delete the service?');">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </button>
+                                @endcan
 
                                 {!! Form::close() !!}
                             </div>
-                            <button type="button"class="btn btn-primary"
-                                onclick="window.location='{{ route('services.show', $service->id) }}'">
-                                View
-                            </button>
+                            @can('service-detail-view')
+                                <button type="button"class="btn btn-primary"
+                                    onclick="window.location='{{ route('services.show', $service->id) }}'">
+                                    View
+                                </button>
+                            @endcan
 
                         </td>
                     </tr>

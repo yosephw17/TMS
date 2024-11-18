@@ -6,9 +6,11 @@
                 <h2>User Management</h2>
             </div>
             <div class="pull-right mb-2 pl-4">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                    Create New User
-                </button>
+                @can('user-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                        Create New User
+                    </button>
+                @endcan
             </div>
 
         </div>
@@ -48,21 +50,29 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group" aria-label="User Actions">
-                                    <a class="btn btn-info" href="#" data-bs-toggle="modal"
-                                        data-bs-target="#showUserModal{{ $user->id }}">Show</a>
-                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#editUserModal{{ $user->id }}">
-                                        <i class="fa-regular fa-pen-to-square"></i>
-                                    </button>
-                                    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#addToTeamModal{{ $user->id }}">
-                                        <i class="fa-solid fa-users"></i> Add to Team
-                                    </button>
+                                    @can('user-view')
+                                        <a class="btn btn-info" href="#" data-bs-toggle="modal"
+                                            data-bs-target="#showUserModal{{ $user->id }}">Show</a>
+                                    @endcan
+                                    @can('user-update')
+                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                                            data-bs-target="#editUserModal{{ $user->id }}">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    @endcan
+                                    @can('user-assign-team')
+                                        <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal"
+                                            data-bs-target="#addToTeamModal{{ $user->id }}">
+                                            <i class="fa-solid fa-users"></i> Add to Team
+                                        </button>
+                                    @endcan
                                     {!! Form::open(['method' => 'DELETE', 'route' => ['users.destroy', $user->id], 'style' => 'display:inline']) !!}
-                                    <button type="submit" class="btn btn-outline-danger" style="border:none;"
-                                        onclick="return confirm('Are you sure you want to delete this user?')">
-                                        <i class="fa-solid fa-trash-can fa-lg"></i>
-                                    </button>
+                                    @can('user-delete')
+                                        <button type="submit" class="btn btn-outline-danger" style="border:none;"
+                                            onclick="return confirm('Are you sure you want to delete this user?')">
+                                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                                        </button>
+                                    @endcan
                                     {!! Form::close() !!}
                                 </div>
                             </td>

@@ -6,6 +6,13 @@ use Illuminate\Http\Request;
 
 class DailyActivityController extends Controller
 {
+    public function __construct()
+    {
+    $this->middleware('auth');
+   
+    $this->middleware('permission:daily-activity-create', ['only' => ['create', 'store']]);
+  
+}
     public function store(Request $request)
     {
         // Validate the incoming request

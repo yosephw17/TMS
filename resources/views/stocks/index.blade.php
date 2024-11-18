@@ -7,9 +7,11 @@
                 <h2>Stock Management</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createStockModal">
-                    Create New Stock
-                </button>
+                @can('stock-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createStockModal">
+                        Create New Stock
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -32,13 +34,17 @@
                             <td>{{ $stock->name }}</td>
                             <td>{{ $stock->location }}</td>
                             <td>
-                                <a class="btn btn-sm btn-info" href="{{ route('stocks.show', $stock->id) }}">
-                                    View
-                                </a>
+                                @can('stock-view')
+                                    <a class="btn btn-sm btn-info" href="{{ route('stocks.show', $stock->id) }}">
+                                        View
+                                    </a>
+                                @endcan
                                 <!-- Edit Button -->
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editStockModal-{{ $stock->id }}">
-                                    <i class="fa-regular fa-pen-to-square"></i> </button>
+                                @can('stock-update')
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editStockModal-{{ $stock->id }}">
+                                        <i class="fa-regular fa-pen-to-square"></i> </button>
+                                @endcan
 
                                 <!-- Delete Button -->
                                 <form id="delete-form-{{ $stock->id }}"
@@ -46,11 +52,12 @@
                                     style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-
-                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                        onclick="if(confirm('Are you sure you want to delete this stock?')) { document.getElementById('delete-form-{{ $stock->id }}').submit(); }">
-                                        <i class="fa-solid fa-trash-can fa-lg"></i>
-                                    </button>
+                                    @can('stock-delete')
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="if(confirm('Are you sure you want to delete this stock?')) { document.getElementById('delete-form-{{ $stock->id }}').submit(); }">
+                                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                                        </button>
+                                    @endcan
                                 </form>
 
                             </td>

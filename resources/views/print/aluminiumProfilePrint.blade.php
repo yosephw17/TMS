@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Proforma Invoice - Teamup Aluminium</title>
+    <title>Proforma Invoice - {{ $companyInfo->name }}</title>
     <style>
         body {
             font-family: "Arial", sans-serif;
@@ -115,6 +115,14 @@
         .footer-list li strong {
             color: #555;
         }
+
+        .qr-code {
+            position: relative;
+            left: 20px;
+            top: 0px;
+            width: 80px;
+            height: 80px;
+        }
     </style>
 </head>
 
@@ -126,17 +134,19 @@
                 <p>Date: {{ \Carbon\Carbon::parse($proforma->date)->format('d/m/Y') }} | Ref No: {{ $proforma->ref_no }}
                 </p>
             </div>
-            <img src="logo-placeholder.png" alt="Teamup Aluminium Logo" class="company-logo" />
+            @if ($companyInfo->logo && file_exists(public_path('storage/' . $companyInfo->logo)))
+                <img src="{{ asset('storage/' . $companyInfo->logo) }}" alt="{{ $companyInfo->name }} Logo"
+                    class="company-logo" />
+            @endif
         </header>
 
         <div class="company-details">
-            <p><strong>Teamup Aluminium PLC</strong></p>
-            <p>Tel: +2519-53-92-44-75</p>
-            <p>Fax: +25114406717</p>
-            <p>PO Box: 18071, Addis Abeba, Ethiopia</p>
-            <p>Email: teamupaluminiumplc@gmail.com</p>
+            <p><strong>{{ $companyInfo->name }}</strong></p>
+            <p>Tel: {{ $companyInfo->phone }}</p>
+            <p>Fax: {{ $companyInfo->fax ?? 'N/A' }}</p>
+            <p>PO Box: {{ $companyInfo->po_box }}</p>
+            <p>Email: {{ $companyInfo->email }}</p>
         </div>
-
         <div class="client-details">
             <p><strong>To: {{ $proforma->customer->name }}</strong></p>
             <p><strong>Phone: </strong>{{ $proforma->customer->phone }}</p>
@@ -147,13 +157,12 @@
 
         <div class="invoice-info">
             <div>
-                <p><strong>Invoice No:</strong> {{ $proforma->ref_no }}</p>
             </div>
             <div>
-                <p><strong>Payment Terms:</strong> 100%</p>
+
             </div>
             <div>
-                <p><strong>Price Validity:</strong> Two Days</p>
+
             </div>
         </div>
 
@@ -195,7 +204,6 @@
             <p>VAT: {{ number_format($proforma->vat_amount, 2) }}</p>
             <p class="total">Grand Total: {{ number_format($proforma->final_total, 2) }}</p>
         </div>
-
         <footer>
             <ul class="footer-list">
                 <li><strong>Price Validity:</strong> Two Days</li>
@@ -203,16 +211,14 @@
                 <li><strong>Delivery:</strong> From Store</li>
             </ul>
         </footer>
+        <img src="{{ asset('images\qr-code.png') }}" alt="QR Code" class="qr-code" />
+
 
     </div>
     <script>
         window.onload = function() {
-            printPage();
-        };
-
-        function printPage() {
             window.print();
-        }
+        };
     </script>
 </body>
 

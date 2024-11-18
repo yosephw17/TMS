@@ -8,9 +8,11 @@
             </div>
             <div class="pull-right">
                 <!-- Changed data-toggle and data-target to Bootstrap 5 format -->
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createRoleModal">
-                    Create New Role
-                </button>
+                @can('role-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createRoleModal">
+                        Create New Role
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -32,12 +34,16 @@
                             <td>{{ $role->name }}</td>
                             <td>
                                 <!-- Show Role Modal Button -->
-                                <button class="btn btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#showRoleModal{{ $role->id }}">Show</button>
+                                @can('role-view')
+                                    <button class="btn btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#showRoleModal{{ $role->id }}">Show</button>
+                                @endcan
 
                                 <!-- Edit Role Modal Button -->
-                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editRoleModal{{ $role->id }}">Edit</button>
+                                @can('role-update')
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editRoleModal{{ $role->id }}">Edit</button>
+                                @endcan
 
                                 <!-- Delete Form -->
                                 {!! Form::open([

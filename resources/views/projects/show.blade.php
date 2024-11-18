@@ -8,9 +8,11 @@
             </div>
             <div class="pull-right">
                 <!-- Button to trigger modal -->
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
-                    Add Project
-                </button>
+                @can('project-create')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
+                        Add Project
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -122,10 +124,12 @@
             text-white d-flex justify-content-between align-items-center">
                 <h4>{{ $project->name }}</h4>
                 <!-- Edit Button -->
-                <button class="btn btn-sm btn-light" data-bs-toggle="modal"
-                    data-bs-target="#editProjectModal{{ $project->id }}">
-                    Edit
-                </button>
+                @can('project-edit')
+                    <button class="btn btn-sm btn-light" data-bs-toggle="modal"
+                        data-bs-target="#editProjectModal{{ $project->id }}">
+                        Edit
+                    </button>
+                @endcan
             </div>
 
             <!-- Edit Project Modal -->
@@ -258,17 +262,19 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="expenses-tab{{ $project->id }}" data-bs-toggle="tab"
                             data-bs-target="#expenses{{ $project->id }}" type="button" role="tab"
-                            aria-controls="expenses{{ $project->id }}" aria-selected="false">Expenses</button>
+                            aria-controls="expenses{{ $project->id }}" aria-selected="false">Costs</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="images-tab{{ $project->id }}" data-bs-toggle="tab"
-                            data-bs-target="#images{{ $project->id }}" type="button" role="tab"
-                            aria-controls="images{{ $project->id }}" aria-selected="false">Images</button>
-                    </li>
+
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="proformas-tab{{ $project->id }}" data-bs-toggle="tab"
                             data-bs-target="#proformas{{ $project->id }}" type="button" role="tab"
                             aria-controls="proformas{{ $project->id }}" aria-selected="false">Proformas</button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="images-tab{{ $project->id }}" data-bs-toggle="tab"
+                            data-bs-target="#images{{ $project->id }}" type="button" role="tab"
+                            aria-controls="images{{ $project->id }}" aria-selected="false">Images</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="task-tab{{ $project->id }}" data-bs-toggle="tab"
@@ -372,9 +378,9 @@
                     </div>
 
 
+                    @include('tab_components.quantityTab')
 
-
-                    <div class="tab-pane fade" id="quantity{{ $project->id }}" role="tabpanel"
+                    {{-- <div class="tab-pane fade" id="quantity{{ $project->id }}" role="tabpanel"
                         aria-labelledby="quantity-tab{{ $project->id }}">
                         <div class="mt-3">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
@@ -417,9 +423,9 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </div> --}}
 
-                    @foreach ($project->materials as $material)
+                    {{-- @foreach ($project->materials as $material)
                         <!-- Edit Material Modal -->
                         <div class="modal fade" id="editMaterialModal{{ $material->id }}-{{ $project->id }}"
                             tabindex="-1" aria-labelledby="editMaterialLabel{{ $material->id }}" aria-hidden="true">
@@ -480,10 +486,10 @@
                                 </form>
                             </div>
                         </div>
-                    @endforeach
+                    @endforeach --}}
 
 
-                    <!-- Select Materials Modal -->
+                    {{-- <!-- Select Materials Modal -->
                     <div class="modal fade" id="selectMaterialsModal{{ $project->id }}" tabindex="-1" role="dialog"
                         aria-labelledby="selectMaterialsModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
@@ -530,32 +536,105 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
 
-                    <!-- Expenses Tab -->
+                    {{-- <!-- Expenses Tab -->
                     <div class="tab-pane fade" id="expenses{{ $project->id }}" role="tabpanel"
                         aria-labelledby="expenses-tab{{ $project->id }}">
                         <div class="mt-3">
                             <!-- Replace this with the actual expenses information -->
                             <p>Expenses related to this project will be listed here.</p>
                         </div>
-                    </div>
-
+                    </div> --}}
+                    @include('tab_components.expenseTab')
                     <!-- Images Tab -->
-                    <div class="tab-pane fade" id="images{{ $project->id }}" role="tabpanel"
-                        aria-labelledby="images-tab{{ $project->id }}">
-                        <div class="mt-3">
-                            <!-- Replace this with the actual images gallery or links -->
-                            <p>Project images will be showcased here.</p>
-                        </div>
-                    </div>
+                    @include('tab_components.imageTab')
 
+                    <!-- Proformas Tab -->
+
+                    @php
+                        $profileProformas = $project->proformas()->where('type', 'aluminium_profile')->get();
+                        $accessoriesProformas = $project->proformas()->where('type', 'aluminium_accessories')->get();
+                        $workProformas = $project->proformas()->where('type', 'work')->get();
+                        $dailyActivities = $project->dailyActivities;
+                    @endphp
                     <!-- Proformas Tab -->
                     <div class="tab-pane fade" id="proformas{{ $project->id }}" role="tabpanel"
                         aria-labelledby="proformas-tab{{ $project->id }}">
-                        <div class="mt-3">
-                            <!-- Replace this with actual proforma data or document links -->
-                            <p>Proformas associated with this project will be listed here.</p>
+                        <div class="card mb-4">
+
+                            <!-- Card Header -->
+                            <div class="card-header text-white">
+                                <h5>{{ $project->name }} Proformas</h5>
+                            </div>
+
+                            <!-- Tabs for Proforma Types -->
+                            <div class="card-body">
+                                <ul class="nav nav-tabs" id="proformaMainTabs{{ $project->id }}" role="tablist">
+                                    <!-- Buyer Proforma Tab -->
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" id="buyer-tab{{ $project->id }}"
+                                            data-bs-toggle="tab" href="#buyerProforma{{ $project->id }}" role="tab"
+                                            aria-controls="buyerProforma{{ $project->id }}" aria-selected="true">
+                                            <i class="bi bi-cart"></i> Aluminium Proforma
+                                        </a>
+                                    </li>
+
+                                    <!-- Seller Proforma Tab -->
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="seller-tab{{ $project->id }}" data-bs-toggle="tab"
+                                            href="#sellerProforma{{ $project->id }}" role="tab"
+                                            aria-controls="sellerProforma{{ $project->id }}" aria-selected="false">
+                                            <i class="bi bi-person-badge"></i> Sales Proforma
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <!-- Main Tab Content -->
+                                <div class="tab-content mt-3" id="proformaMainTabContent{{ $project->id }}">
+                                    <!-- Buyer Proforma Content -->
+                                    <div class="tab-pane fade show active" id="buyerProforma{{ $project->id }}"
+                                        role="tabpanel" aria-labelledby="buyer-tab{{ $project->id }}">
+                                        <ul class="nav nav-tabs" id="proformaTabs{{ $project->id }}" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link active" id="profile-tab{{ $project->id }}"
+                                                    data-bs-toggle="tab" href="#profileProforma{{ $project->id }}"
+                                                    role="tab" aria-controls="profileProforma{{ $project->id }}"
+                                                    aria-selected="true">
+                                                    <i class="bi bi-box-seam"></i> Aluminium Profile Proforma
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="accessories-tab{{ $project->id }}"
+                                                    data-bs-toggle="tab" href="#accessoriesProforma{{ $project->id }}"
+                                                    role="tab" aria-controls="accessoriesProforma{{ $project->id }}"
+                                                    aria-selected="false">
+                                                    <i class="bi bi-gear"></i> Accessories Proforma
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="work-tab{{ $project->id }}"
+                                                    data-bs-toggle="tab" href="#workProforma{{ $project->id }}"
+                                                    role="tab" aria-controls="workProforma{{ $project->id }}"
+                                                    aria-selected="false">
+                                                    <i class="bi bi-briefcase"></i> Work Proforma
+                                                </a>
+                                            </li>
+                                        </ul>
+
+                                        <!-- Buyer Proforma Tab Content -->
+                                        <div class="tab-content mt-3" id="proformaTabContent{{ $project->id }}">
+                                            @include('tab_components.aluminiumProfileTab')
+                                            @include('tab_components.aluminiumAccessoriesTab')
+                                            @include('tab_components.workProformaTab')
+                                        </div>
+                                    </div>
+
+                                    <!-- Seller Proforma Content -->
+                                    @include('tab_components.sellerProformaTab')
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <!-- Daily Tasks Tab -->
