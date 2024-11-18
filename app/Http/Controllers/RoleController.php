@@ -8,7 +8,17 @@ use Spatie\Permission\Models\Permission;
 class RoleController extends Controller
 {
 
-  
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-role', ['only' => ['index']]);
+        $this->middleware('permission:role-view', ['only' => ['show']]);
+        $this->middleware('permission:role-create', ['only' => ['store']]);
+        $this->middleware('permission:role-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:role-delete', ['only' => ['destroy']]);
+    }
 
     public function index(Request $request)
     {

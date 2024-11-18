@@ -7,9 +7,11 @@
                 <h2>Permission Management</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createPermissionModal">
-                    Create New Permission
-                </button>
+                @can('permission-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createPermissionModal">
+                        Create New Permission
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -30,18 +32,24 @@
                             <td>{{ ++$key }}</td>
                             <td>{{ $permission->name }}</td>
                             <td>
-                                <button class="btn btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#showPermissionModal{{ $permission->id }}">
-                                    Show
-                                </button>
-                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editPermissionModal{{ $permission->id }}">
-                                    Edit
-                                </button>
-                                <button type="button" class="btn btn-outline-danger"
-                                    onclick="deletePermission({{ $permission->id }})" style="border:none;">
-                                    <i class="fa-solid fa-trash-can fa-lg"></i>
-                                </button>
+                                @can('permission-view')
+                                    <button class="btn btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#showPermissionModal{{ $permission->id }}">
+                                        Show
+                                    </button>
+                                @endcan
+                                @can('permission-edit')
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editPermissionModal{{ $permission->id }}">
+                                        Edit
+                                    </button>
+                                @endcan
+                                @can('permission-delete')
+                                    <button type="button" class="btn btn-outline-danger"
+                                        onclick="deletePermission({{ $permission->id }})" style="border:none;">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </button>
+                                @endcan
                             </td>
                         </tr>
 

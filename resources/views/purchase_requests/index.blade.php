@@ -5,9 +5,11 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4>Proforma Requests</h4>
             <!-- Button to trigger the modal -->
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProformaRequestModal">
-                Create Purchase Request
-            </button>
+            @can('purchase-request-create')
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProformaRequestModal">
+                    Create Purchase Request
+                </button>
+            @endcan
         </div>
 
         <div class="card-body">
@@ -72,26 +74,35 @@
                                     </div>
 
                                     <!-- Non-stock Material Details -->
-                                    @if ($purchaseRequest->non_stock_name)
-                                        <div class="mb-3">
-                                            <i class="fas fa-cubes"></i> <strong>Non-stock Material:</strong>
-                                            {{ $purchaseRequest->non_stock_name }}
-                                        </div>
-
+                                    @if ($purchaseRequest->non_stock_name || $purchaseRequest->non_stock_price)
+                                        @if (!in_array($purchaseRequest->type, ['labour', 'transport']))
+                                            <!-- Check for type -->
+                                            <div class="mb-3">
+                                                <i class="fas fa-cubes"></i> <strong>Non-stock Material:</strong>
+                                                {{ $purchaseRequest->non_stock_name }}
+                                            </div>
+                                        @else
+                                            <div class="mb-3">
+                                                <i class="fas fa-info-circle"></i>
+                                                <strong>Details:</strong> {{ $purchaseRequest->details }}
+                                            </div>
+                                        @endif
 
                                         @if ($purchaseRequest->non_stock_price)
                                             <div class="mb-3">
-                                                <i class="fas fa-dollar-sign"></i> <strong>Non-stock Price:</strong>
+                                                <i class="fas fa-dollar-sign"></i> <strong>Price:</strong>
                                                 {{ $purchaseRequest->non_stock_price }}
                                             </div>
                                         @endif
+
                                         @if ($purchaseRequest->non_stock_quantity)
                                             <div class="mb-3">
                                                 <i class="fas fa-shopping-cart"></i>
-                                                <strong>Non-stock Quantity:</strong>
+                                                <strong>Quantity:</strong>
                                                 {{ $purchaseRequest->non_stock_quantity }}
                                             </div>
                                         @endif
+
                                         <!-- Non-stock Material Image -->
                                         @if ($purchaseRequest->non_stock_image)
                                             <div class="mb-3">
@@ -102,14 +113,17 @@
                                                         alt="Non-stock Material Image" class="img-fluid mt-2"
                                                         width="100">
                                                 </a>
-
                                             </div>
                                         @endif
-                                    @else
-                                        <div class="mb-3">
-                                            <i class="fas fa-cubes"></i> <strong>Non-stock Material:</strong> N/A
-                                        </div>
+                                        {{-- @else
+                                        @if (!in_array($purchaseRequest->type, ['labour', 'transport']))
+                                            <!-- Check for type -->
+                                            <div class="mb-3">
+                                                <i class="fas fa-cubes"></i> <strong>Non-stock Material:</strong> N/A
+                                            </div>
+                                        @endif --}}
                                     @endif
+
 
                                     <!-- Materials from Stock -->
                                     @if ($purchaseRequest->materials->count() > 0)
@@ -143,17 +157,21 @@
                                             method="POST" class="d-inline">
                                             @csrf
                                             @method('POST')
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="fas fa-check"></i> Approve
-                                            </button>
+                                            @can('purchase-request-approve')
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                            @endcan
                                         </form>
                                         <form action="{{ route('purchase_requests.decline', $purchaseRequest->id) }}"
                                             method="POST" class="d-inline">
                                             @csrf
                                             @method('POST')
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="fas fa-times"></i> Decline
-                                            </button>
+                                            @can('purchase-request-decline')
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-times"></i> Decline
+                                                </button>
+                                            @endcan
                                         </form>
                                     </div>
                                 </div>
@@ -174,7 +192,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="{{ route('purchase_requests.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('purchase_requests.store') }}" method="POST" enctype="multipart/form-data"
+                        novalidate>
                         @csrf
 
                         <!-- Project Selection -->
@@ -212,6 +231,7 @@
                                 <!-- Material checkboxes will be loaded dynamically here -->
                             </div>
                         </div>
+
                         <input type="hidden" name="user_id" value="{{ Auth::id() }}">
 
                         <!-- Non-stock Material Input -->
@@ -220,14 +240,14 @@
                             <input type="text" name="non_stock_name" class="form-control">
 
                             <label for="non_stock_price">Material Price</label>
-                            <input type="number" name="non_stock_price" class="form-control" step="0.01" required>
-
+                            <input type="number" name="non_stock_price" class="form-control" step="0.01">
 
                             <label for="non_stock_quantity">Material Quantity</label>
                             <input type="number" name="non_stock_quantity" class="form-control">
 
                             <label for="non_stock_image">Material Image (Optional)</label>
-                            <input type="file" name="non_stock_image" class="form-control" accept="image/*">
+                            <input type="file" name="non_stock_image" id="non_stock_image" class="form-control"
+                                accept="image/*">
                         </div>
 
                         <!-- Labour/Transport Details -->
@@ -235,6 +255,10 @@
                             <label for="details">Enter Details</label>
                             <input type="text" name="details" class="form-control"
                                 placeholder="Enter Labour/Transport details">
+
+                            <label for="labour_transport_price">Enter Price</label>
+                            <input type="number" name="labour_transport_price" class="form-control"
+                                placeholder="Enter Labour/Transport Price" step="0.001" min="0">
                         </div>
 
                         <!-- Submit Button -->
@@ -246,47 +270,63 @@
             </div>
         </div>
     </div>
+
     <script>
-        // Handle type selection for showing relevant sections
-        document.getElementById('type').addEventListener('change', function() {
-            let selectedType = this.value;
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeField = document.getElementById('type');
+            const materialStockSection = document.getElementById('material-stock-section');
+            const materialNonStockSection = document.getElementById('material-non-stock-section');
+            const labourTransportSection = document.getElementById('labour-transport-section');
+            const stockSelect = document.getElementById('stock_id');
+            const materialsList = document.getElementById('materials-list');
 
-            // Show/hide sections based on selected type
-            document.getElementById('material-stock-section').style.display = (selectedType === 'material_stock') ?
-                'block' : 'none';
-            document.getElementById('material-non-stock-section').style.display = (selectedType ===
-                'material_non_stock') ? 'block' : 'none';
-            document.getElementById('labour-transport-section').style.display = (selectedType === 'labour' ||
-                selectedType === 'transport') ? 'block' : 'none';
+            // Show/hide sections based on type selection
+            typeField.addEventListener('change', function() {
+                const selectedType = typeField.value;
+
+                materialStockSection.style.display = selectedType === 'material_stock' ? 'block' : 'none';
+                materialNonStockSection.style.display = selectedType === 'material_non_stock' ? 'block' :
+                    'none';
+                labourTransportSection.style.display = (selectedType === 'labour' || selectedType ===
+                    'transport') ? 'block' : 'none';
+
+                // Adjust required attributes based on visible inputs
+                document.querySelectorAll(
+                        '#material-stock-section input, #labour-transport-section input, #material-non-stock-section input'
+                    )
+                    .forEach(input => {
+                        input.required = input.closest('div').style.display === 'block';
+                    });
+            });
+
+            // Load materials from the selected stock dynamically
+            stockSelect.addEventListener('change', function() {
+                const stockId = stockSelect.value;
+
+                if (stockId) {
+                    fetch(`/api/stock/${stockId}/materials`)
+                        .then(response => response.json())
+                        .then(materials => {
+                            materialsList.innerHTML = ''; // Clear the previous list
+
+                            materials.forEach(material => {
+                                const materialItem = `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="materials[${material.id}][selected]" value="1">
+                                <label class="form-check-label">${material.name} (${material.unit_of_measurement}) - Available: ${material.pivot.quantity} - Color: ${material.color}</label>
+                                <input type="number" name="materials[${material.id}][quantity]" class="form-control mt-2" placeholder="Quantity" min="1">
+                            </div>`;
+                                materialsList.insertAdjacentHTML('beforeend', materialItem);
+                            });
+                        })
+                        .catch(error => console.error('Error fetching materials:', error));
+                } else {
+                    materialsList.innerHTML = ''; // Clear materials list if no stock is selected
+                }
+            });
+
+            // Trigger initial change event on page load to display the correct sections
+            typeField.dispatchEvent(new Event('change'));
         });
-
-        // Load materials from the selected stock dynamically
-        document.getElementById('stock_id').addEventListener('change', function() {
-            let stockId = this.value;
-
-            if (stockId) {
-                fetch(`/api/stock/${stockId}/materials`)
-                    .then(response => response.json())
-                    .then(materials => {
-                        let materialsList = document.getElementById('materials-list');
-                        materialsList.innerHTML = ''; // Clear the previous list
-
-                        // Create material checkboxes dynamically
-                        materials.forEach(material => {
-                            let materialCheck = `
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="materials[${material.id}][selected]" value="1">
-                                    <label class="form-check-label">${material.name} (${material.unit_of_measurement}) -Available: ${material.pivot.quantity}  -Color: ${material.color}</label>
-                                    <input type="number" name="materials[${material.id}][quantity]" class="form-control mt-2" placeholder="Quantity" min="1">
-                                </div>`;
-                            materialsList.innerHTML += materialCheck;
-                        });
-                    })
-                    .catch(error => console.error('Error fetching materials:', error));
-            }
-        });
-
-        // Trigger initial change event to show relevant sections based on pre-selected values
-        document.getElementById('type').dispatchEvent(new Event('change'));
     </script>
 @endsection

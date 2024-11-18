@@ -7,9 +7,11 @@
                 <h2>Material Management</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createMaterialModal">
-                    Create New Material
-                </button>
+                @can('material-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createMaterialModal">
+                        Create New Material
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -46,18 +48,24 @@
                             <td>{{ $material->unit_of_measurement }}</td>
                             <td>{{ $material->color }}</td>
                             <td>
-                                <button class="btn btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#showMaterialModal{{ $material->id }}">
-                                    Show
-                                </button>
-                                <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editMaterialModal{{ $material->id }}">
-                                    Edit
-                                </button>
-                                <button type="button" class="btn btn-outline-danger"
-                                    onclick="deleteMaterial({{ $material->id }})" style="border:none;">
-                                    <i class="fa-solid fa-trash-can fa-lg"></i>
-                                </button>
+                                @can('material-view')
+                                    <button class="btn btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#showMaterialModal{{ $material->id }}">
+                                        Show
+                                    </button>
+                                @endcan
+                                @can('material-edit')
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editMaterialModal{{ $material->id }}">
+                                        Edit
+                                    </button>
+                                @endcan
+                                @can('material-delete')
+                                    <button type="button" class="btn btn-outline-danger"
+                                        onclick="deleteMaterial({{ $material->id }})" style="border:none;">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </button>
+                                @endcan
                             </td>
                         </tr>
 
@@ -81,6 +89,7 @@
                                         </p>
                                         <p><strong>Unit Price:</strong> {{ $material->unit_price }}</p>
                                         <p><strong>Unit of Measurement:</strong> {{ $material->unit_of_measurement }}</p>
+                                        <p><strong>Type:</strong> {{ $material->type }}</p>
                                         <p><strong>Color:</strong> <span
                                                 style="background-color: {{ $material->color }}; padding: 0.2em 0.6em;">{{ $material->color }}</span>
                                         </p>
@@ -159,16 +168,14 @@
                                                         {{ $material->unit_of_measurement == 'pcs' ? 'selected' : '' }}>
                                                         Pieces (pcs)</option>
                                                     <option value="bar"
-                                                        {{ $material->unit_of_measurement == 'bar' ? 'selected' : '' }}>
-                                                        Bar (bar)</option>
+                                                        {{ $material->unit_of_measurement == 'bar' ? 'selected' : '' }}>Bar
+                                                        (bar)</option>
                                                 </select>
                                             </div>
 
                                             <div class="form-group">
                                                 <strong>Color:</strong>
                                                 <select name="color" class="form-control">
-                                                    <option value="" disabled selected>Select Color</option>
-
                                                     <option value="white"
                                                         {{ $material->color == 'white' ? 'selected' : '' }}>White</option>
                                                     <option value="black"
@@ -179,6 +186,28 @@
                                                         {{ $material->color == 'blue' ? 'selected' : '' }}>Blue</option>
                                                     <option value="green"
                                                         {{ $material->color == 'green' ? 'selected' : '' }}>Green</option>
+                                                    <option value="yellow"
+                                                        {{ $material->color == 'yellow' ? 'selected' : '' }}>Yellow
+                                                    </option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Type (Dropdown for Material Type) -->
+                                            <div class="form-group mt-3">
+                                                <strong>Type:</strong>
+                                                <select name="type" class="form-control" required>
+                                                    <option value="" disabled>Select Material Type</option>
+                                                    <option value="aluminium_profile"
+                                                        {{ $material->type == 'aluminium_profile' ? 'selected' : '' }}>
+                                                        Aluminium Profile</option>
+                                                    <option value="aluminium_accessory"
+                                                        {{ $material->type == 'aluminium_accessory' ? 'selected' : '' }}>
+                                                        Aluminium Accessory</option>
+                                                    <option value="finishing"
+                                                        {{ $material->type == 'finishing' ? 'selected' : '' }}>Finishing
+                                                    </option>
+                                                    <option value="other"
+                                                        {{ $material->type == 'other' ? 'selected' : '' }}>Other</option>
                                                 </select>
                                             </div>
 
@@ -219,9 +248,6 @@
                             <input type="text" name="code" placeholder="Code" class="form-control">
                         </div>
 
-
-
-
                         <!-- Unit of Measurement -->
                         <div class="form-group mt-3">
                             <strong>Unit of Measurement:</strong>
@@ -244,6 +270,7 @@
                             <input type="text" name="unit_price" placeholder="Unit Price" class="form-control"
                                 required>
                         </div>
+
                         <!-- Color (Dropdown with White and Black on Top) -->
                         <div class="form-group mt-3">
                             <strong>Color:</strong>
@@ -258,6 +285,19 @@
                                 <!-- Add more colors as needed -->
                             </select>
                         </div>
+
+                        <!-- Type (Dropdown for Material Type) -->
+                        <div class="form-group mt-3">
+                            <strong>Type:</strong>
+                            <select name="type" class="form-control" required>
+                                <option value="" disabled selected>Select Material Type</option>
+                                <option value="aluminium_profile">Aluminium Profile</option>
+                                <option value="aluminium_accessory">Aluminium Accessory</option>
+                                <option value="finishing">Finishing</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
                         <!-- Symbol (Image Upload) -->
                         <div class="form-group mt-3">
                             <strong>Symbol (Upload Image):</strong>

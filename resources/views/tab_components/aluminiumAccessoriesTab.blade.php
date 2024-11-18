@@ -1,11 +1,12 @@
 <div class="tab-pane fade" id="accessoriesProforma{{ $project->id }}" role="tabpanel"
     aria-labelledby="accessories-tab{{ $project->id }}">
     <h5>Accessories Proformas</h5>
-
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal"
-        data-bs-target="#addAccessoriesProformaModal{{ $project->id }}">
-        Add Proforma
-    </button>
+    @can('proforma-create')
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal"
+            data-bs-target="#addAccessoriesProformaModal{{ $project->id }}">
+            Add Proforma
+        </button>
+    @endcan
 
     @if ($accessoriesProformas->isEmpty())
         <p>No Accessories Proformas available.</p>
@@ -36,26 +37,31 @@
                             <td>{{ $proforma->discount }}</td>
                             <td>{{ $proforma->final_total }}</td>
                             <td>
-
-                                <button class="btn btn-outline-primary btn-sm edit-proforma-btn" data-bs-toggle="modal"
-                                    data-bs-target="#editAccessoriesProformaModal{{ $proforma->id }}">
-                                    Edit
-                                </button>
+                                @can('proforma-edit')
+                                    <button class="btn btn-outline-primary btn-sm edit-proforma-btn" data-bs-toggle="modal"
+                                        data-bs-target="#editAccessoriesProformaModal{{ $proforma->id }}">
+                                        Edit
+                                    </button>
+                                @endcan
                                 <form action="{{ route('proformas.destroy', $proforma->id) }}" method="POST"
                                     style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                                        onclick="return confirm('Are you sure you want to delete this proforma?')">
-                                        Delete
-                                    </button>
+                                    @can('proforma-delete')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Are you sure you want to delete this proforma?')">
+                                            Delete
+                                        </button>
+                                    @endcan
                                 </form>
-                                <a href="{{ route('print.accessories', $proforma->id) }}" class="btn btn-secondary"
-                                    target="_blank"
-                                    onclick="event.preventDefault(); window.open(this.href, '_blank'); return false;">
-                                    <i class="fas fa-print"></i>
-                                    Print
-                                </a>
+                                @can('proforma-print')
+                                    <a href="{{ route('print.accessories', $proforma->id) }}" class="btn btn-secondary"
+                                        target="_blank"
+                                        onclick="event.preventDefault(); window.open(this.href, '_blank'); return false;">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
                         <tr class="collapse" id="collapseProforma{{ $proforma->id }}">
@@ -139,7 +145,7 @@
                                         <div class="modal-body">
                                             <!-- Customer and Project Info -->
                                             <input type="hidden" name="project_id" value="{{ $project->id }}">
-                                            <input type="hidden" name="type" value="accessories">
+                                            <input type="hidden" name="type" value="aluminium_accessories">
                                             <input type="hidden" name="customer_id" class="form-control"
                                                 value="{{ $project->customer_id }}">
 
@@ -161,26 +167,28 @@
                                                 <label for="materials">Select Materials</label>
                                                 <div class="row">
                                                     @foreach ($materials as $material)
-                                                        <div class="col-md-6">
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    name="materials[{{ $material->id }}][selected]"
-                                                                    id="material{{ $material->id }}"
-                                                                    {{ $proforma->materials->contains($material->id) ? 'checked' : '' }}>
-                                                                <label class="form-check-label"
-                                                                    for="material{{ $material->id }}">
-                                                                    {{ $material->name }}
-                                                                    ({{ $material->unit_price }}
-                                                                    per
-                                                                    {{ $material->unit_of_measurement }})
-                                                                </label>
+                                                        @if ($material->type === 'aluminium_accessory')
+                                                            <div class="col-md-6">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="materials[{{ $material->id }}][selected]"
+                                                                        id="material{{ $material->id }}"
+                                                                        {{ $proforma->materials->contains($material->id) ? 'checked' : '' }}>
+                                                                    <label class="form-check-label"
+                                                                        for="material{{ $material->id }}">
+                                                                        {{ $material->name }}
+                                                                        ({{ $material->unit_price }}
+                                                                        per
+                                                                        {{ $material->unit_of_measurement }})
+                                                                    </label>
+                                                                </div>
+                                                                <input type="number"
+                                                                    name="materials[{{ $material->id }}][quantity]"
+                                                                    class="form-control mt-1" placeholder="Quantity"
+                                                                    min="0" step="1"
+                                                                    value="{{ $proforma->materials->contains($material->id) ? $proforma->materials->find($material->id)->pivot->quantity : 0 }}">
                                                             </div>
-                                                            <input type="number"
-                                                                name="materials[{{ $material->id }}][quantity]"
-                                                                class="form-control mt-1" placeholder="Quantity"
-                                                                min="0" step="1"
-                                                                value="{{ $proforma->materials->contains($material->id) ? $proforma->materials->find($material->id)->pivot->quantity : 0 }}">
-                                                        </div>
+                                                        @endif
                                                     @endforeach
                                                 </div>
                                             </div>
@@ -262,20 +270,22 @@
                         <label for="materials">Select Materials</label>
                         <div class="row">
                             @foreach ($materials as $material)
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                            name="materials[{{ $material->id }}][selected]"
-                                            id="material{{ $material->id }}">
-                                        <label class="form-check-label" for="material{{ $material->id }}">
-                                            {{ $material->name }} ({{ $material->unit_price }} per
-                                            {{ $material->unit_of_measurement }})
-                                        </label>
+                                @if ($material->type === 'aluminium_accessory')
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                name="materials[{{ $material->id }}][selected]"
+                                                id="material{{ $material->id }}">
+                                            <label class="form-check-label" for="material{{ $material->id }}">
+                                                {{ $material->name }} ({{ $material->unit_price }} per
+                                                {{ $material->unit_of_measurement }})
+                                            </label>
+                                        </div>
+                                        <input type="number" name="materials[{{ $material->id }}][quantity]"
+                                            class="form-control mt-1" placeholder="Quantity" min="0"
+                                            step="1">
                                     </div>
-                                    <input type="number" name="materials[{{ $material->id }}][quantity]"
-                                        class="form-control mt-1" placeholder="Quantity" min="0"
-                                        step="1">
-                                </div>
+                                @endif
                             @endforeach
                         </div>
                     </div>

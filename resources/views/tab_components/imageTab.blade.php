@@ -8,7 +8,9 @@
                  <input type="file" name="files[]" class="form-control" accept="image/*" multiple>
                  <small class="form-text text-muted">You can upload multiple images.</small>
              </div>
-             <button type="submit" class="btn btn-primary">Upload</button>
+             @can('project-upload-file')
+                 <button type="submit" class="btn btn-primary">Upload</button>
+             @endcan
          </form>
 
          <h5 class="mt-4">Uploaded Images</h5>

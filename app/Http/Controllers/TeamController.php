@@ -5,6 +5,17 @@ use Illuminate\Http\Request;
 
 class TeamController extends Controller
 {
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-team', ['only' => ['index']]);
+        $this->middleware('permission:team-view', ['only' => ['show']]);
+        $this->middleware('permission:team-create', ['only' => ['store']]);
+        $this->middleware('permission:team-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:team-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         $teams = Team::all();

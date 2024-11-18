@@ -7,6 +7,18 @@ use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        // Apply permission middleware for specific actions
+        $this->middleware('permission:manage-permission', ['only' => ['index']]);
+        $this->middleware('permission:permission-view', ['only' => ['show']]);
+        $this->middleware('permission:permission-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:permission-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:permission-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         $permissions = Permission::all(); // Fetch all permissions

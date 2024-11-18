@@ -7,9 +7,11 @@
                 <h2>Stock: {{ $stock->name }} ({{ $stock->location }})</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
-                    Add Material
-                </button>
+                @can('stock-add-material')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
+                        Add Material
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -35,10 +37,12 @@
                             <td>{{ $material->pivot->quantity }} </td>
                             <td <td>
                                 <!-- Remove Button that opens the modal -->
-                                <button class="btn btn-danger" data-bs-toggle="modal"
-                                    data-bs-target="#removeMaterialModal{{ $material->id }}">
-                                    Remove
-                                </button>
+                                @can('stock-remove-material')
+                                    <button class="btn btn-danger" data-bs-toggle="modal"
+                                        data-bs-target="#removeMaterialModal{{ $material->id }}">
+                                        Remove
+                                    </button>
+                                @endcan
                             </td>
                         </tr>
 
@@ -84,28 +88,36 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addMaterialModalLabel">Add Material to Stock</h5>
+                    <h5 class="modal-title" id="addMaterialModalLabel">Add Materials to Stock</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ route('stocks.addMaterial', $stock->id) }}" method="POST">
                         @csrf
                         <div class="form-group">
-                            <strong>Select Material:</strong>
-                            <select name="material_id" class="form-control" required>
+                            <label for="materials">Materials</label>
+                            <div class="row">
                                 @foreach ($materials as $material)
-                                    <option value="{{ $material->id }}">{{ $material->name }}@if ($material->color)
-                                            ({{ $material->color }})
-                                        @endif
-                                    </option>
+                                    <div class="col-md-12">
+                                        <div class="form-check">
+                                            <!-- Checkbox for selecting the material -->
+                                            <input class="form-check-input" type="checkbox" name="materials[]"
+                                                value="{{ $material->id }}" id="material{{ $material->id }}">
+                                            <label class="form-check-label" for="material{{ $material->id }}">
+                                                {{ $material->name }}
+                                                @if ($material->color)
+                                                    ({{ $material->color }})
+                                                @endif
+                                            </label>
+                                            <!-- Quantity input for each material -->
+                                            <input type="number" name="quantities[{{ $material->id }}]"
+                                                class="form-control mt-2" placeholder="Quantity" min="1">
+                                        </div>
+                                    </div>
                                 @endforeach
-                            </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <strong>Quantity:</strong>
-                            <input type="number" name="quantity" class="form-control" required>
-                        </div>
-                        <div class="text-center">
+                        <div class="text-center mt-3">
                             <button type="submit" class="btn btn-primary">Add</button>
                         </div>
                     </form>

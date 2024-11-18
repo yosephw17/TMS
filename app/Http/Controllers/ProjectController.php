@@ -9,12 +9,23 @@ use App\Models\Service;
 use App\Models\Material;
 use App\Models\ProjectFile;
 use App\Models\Team;
+use App\Models\CompanyInfo;
 
 class ProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-project', ['only' => ['index']]);
+        $this->middleware('permission:project-view', ['only' => ['showProject']]);
+        $this->middleware('permission:project-create', ['only' => ['store']]);
+        $this->middleware('permission:project-edit', ['only' => ['edit', 'update','updateMaterial']]);
+        $this->middleware('permission:project-delete', ['only' => ['destroy','destroyMaterial']]);
+        $this->middleware('permission:project-material-print', ['only' => ['printMaterials']]);
+        $this->middleware('permission:project-upload-file', ['only' => ['uploadFiles']]);
+    }
     public function index()
 {
     $pendingProjects = Project::where('status', 'pending')->get();
@@ -62,8 +73,7 @@ class ProjectController extends Controller
         $project->teams()->sync($request->team_ids);
     }
 
-        return redirect()->route('projects.show',$request->customer_id)->with('success', 'Project created successfully.');
-    }
+    return redirect()->back()->with('success', 'Project created successfully.');    }
     
 
     /**
@@ -74,23 +84,40 @@ class ProjectController extends Controller
         // Retrieve the customer and their associated projects
         $customer = Customer::findOrFail($customerId);
         $projects = Project::where('customer_id', $customerId)->get();
+        
 $services=Service::all();
 $materials=Material::all();
 $teams=Team::all();
+
         // Return the view with customer and projects data
-        return view('projects.show', compact('customer', 'projects','services','materials','teams'));
+        return view('projects.show', compact('customer', 'projects','services','materials','teams', 
+       ));
     }
     public function showProject($projectId)
     {
-        $project = Project::findOrFail($projectId);
-        $customer = $project->customer;
-         $services=Service::all();
-        $materials=Material::all();
+        $project = Project::with(['proformaImages' => function ($query) {
+            $query->where('status', 'approved');
+        }])->findOrFail($projectId);
+                $customer = $project->customer;
+        $services = Service::all();
+        $materials = Material::all();
         $profileProformas = $project->proformas()->where('type', 'aluminium_profile')->get();
         $accessoriesProformas = $project->proformas()->where('type', 'aluminium_accessories')->get();
         $workProformas = $project->proformas()->where('type', 'work')->get();
-        return view('projects.view', compact('customer', 'project','services','materials','profileProformas', 'accessoriesProformas', 'workProformas'));
+    
+        $dailyActivities = $project->dailyActivities; 
+        return view('projects.view', compact(
+            'customer', 
+            'project', 
+            'services', 
+            'materials', 
+            'profileProformas', 
+            'accessoriesProformas', 
+            'workProformas',
+            'dailyActivities' // Passing daily activities to the view
+        ));
     }
+    
 
     /**
      * Show the form for editing the specified resource.
@@ -129,26 +156,36 @@ $teams=Team::all();
             $project->teams()->sync($request->team_ids);
         }
     
-        return redirect()->route('projects.show',$request->customer_id)->with('success', 'Project created successfully.');    }
-    
-    public function addMaterials(Request $request, Project $project)
-    {
-        $selectedMaterials = $request->input('materials'); // Array of selected material IDs
-        $quantities = $request->input('quantities'); // Array of quantities for each material ID
+        return redirect()->back()->with('success', 'Project updated successfully.');}    
+            public function addMaterials(Request $request, Project $project)
+            {
+                $selectedMaterials = $request->input('materials', []); // Array of selected material IDs
+                $quantities = $request->input('quantities', []); // Array of quantities for each material ID
+            
+                // Custom validation to ensure quantity is provided for each selected material
+                $errors = [];
+                foreach ($selectedMaterials as $materialId) {
+                    if (empty($quantities[$materialId]) || $quantities[$materialId] <= 0) {
+                        // Retrieve the material name for a clear error message
+                        $materialName = Material::find($materialId)->name ?? 'Unknown Material';
+                        $errors["quantities.$materialId"] = "Quantity is required for the selected material: $materialName.";
+                    }
+                }
+            
+                if (!empty($errors)) {
+                    return redirect()->back()->withErrors($errors)->withInput();
+                }
+            
+                // Attach each selected material to the project with its quantity
+                foreach ($selectedMaterials as $materialId) {
+                    $quantity = $quantities[$materialId];
+                    $project->materials()->attach($materialId, ['quantity' => $quantity]);
+                }
+            
+                // Redirect to the project show page with a success message
+                return redirect()->back()->with('success', 'Materials added successfully.');            }
         
-        foreach ($selectedMaterials as $materialId) {
-            $quantity = $quantities[$materialId];
-    
-            // Attach the material to the project with the quantity
-            $project->materials()->attach($materialId, ['quantity' => $quantity]);
-        }
-    
-        // Retrieve the customer related to the project
-        $customerId = $project->customer->id;
-    
-        // Redirect to the route with the customer ID
-        return redirect()->route('projects.show', $customerId)->with('success', 'Materials added successfully.');
-    }
+
     
     public function updateMaterial(Request $request, $projectId, $materialId)
 {
@@ -158,8 +195,7 @@ $teams=Team::all();
     $project->materials()->updateExistingPivot($materialId, ['quantity' => $request->input('quantity')]);
     $customerId = $project->customer->id;
 
-    return redirect()->route('projects.show', $customerId)->with('success', 'Material updated successfully.');
-}
+    return redirect()->back()->with('success', 'Materials updated successfully.');}
 public function uploadFiles(Request $request, $projectId)
     {
         $project = Project::find($projectId);
@@ -187,6 +223,13 @@ public function destroyMaterial(Project $project, Material $material)
     // Redirect back with a success message
     return redirect()->back()->with('success', 'Material deleted successfully.');
 }
+public function printMaterials(Project $project)
+{
+    $project->load('materials'); 
+    $companyInfo=CompanyInfo::find(3);// Load materials relationship
+    return view('print.materialsPrint', compact('project','companyInfo'));
+}
+
 
     /**
      * Remove the specified resource from storage.

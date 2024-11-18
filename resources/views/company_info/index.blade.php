@@ -5,9 +5,11 @@
         <h1>Company Information Settings</h1>
 
         <!-- Button to trigger Add Company Info Modal -->
-        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addCompanyInfoModal">
-            Add Company Info
-        </button>
+        {{-- @can('setting-create')
+            <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addCompanyInfoModal">
+                Add Company Info
+            </button>
+        @endcan --}}
 
         <!-- Display Company Info Boxes -->
         <div class="row">
@@ -18,21 +20,25 @@
                             <h5 class="mb-0">{{ $companyInfo->name }}</h5>
                             <div>
                                 <!-- Edit Button -->
-                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#editCompanyInfoModal{{ $companyInfo->id }}">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
+                                @can('setting-update')
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#editCompanyInfoModal{{ $companyInfo->id }}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                @endcan
 
-                                <!-- Delete Form -->
+                                {{-- <!-- Delete Form -->
                                 <form action="{{ route('settings.destroy', $companyInfo->id) }}" method="POST"
                                     style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                        onclick="return confirm('Are you sure you want to delete this company info?');">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </button>
-                                </form>
+                                    @can('setting-delete')
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Are you sure you want to delete this company info?');">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    @endcan
+                                </form> --}}
                             </div>
                         </div>
                         <div class="card-body ">

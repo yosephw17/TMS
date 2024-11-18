@@ -7,14 +7,22 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    // Display a listing of the customers
+    public function __construct()
+    {
+    $this->middleware('auth');
+    
+    $this->middleware('permission:manage-customer', ['only' => ['index']]);
+    $this->middleware('permission:customer-view', ['only' => ['show']]);
+    $this->middleware('permission:customer-create', ['only' => ['create', 'store']]);
+    $this->middleware('permission:customer-edit', ['only' => ['edit', 'update']]);
+    $this->middleware('permission:customer-delete', ['only' => ['destroy']]);
+}
     public function index()
     {
-        $customers = Customer::all(); // Get all customers
-        return view('customers.index', compact('customers')); // Return the view with customers
+        $customers = Customer::all(); 
+        return view('customers.index', compact('customers')); 
     }
 
-    // Store a newly created customer in storage
     public function store(Request $request)
     {
         $request->validate([
@@ -23,17 +31,15 @@ class CustomerController extends Controller
             'address' => 'required|string|max:255',
         ]);
 
-        Customer::create($request->all()); // Create new customer
+        Customer::create($request->all()); 
         return redirect()->route('customers.index')->with('success', 'Customer created successfully.'); // Redirect with success message
     }
 
-    // Show the form for editing the specified customer
     public function edit(Customer $customer)
     {
-        return view('customers.edit', compact('customer')); // Return the edit view with customer data
+        return view('customers.edit', compact('customer')); 
     }
 
-    // Update the specified customer in storage
     public function update(Request $request, Customer $customer)
     {
         $request->validate([
@@ -42,14 +48,13 @@ class CustomerController extends Controller
             'address' => 'required|string|max:255',
         ]);
 
-        $customer->update($request->all()); // Update customer data
+        $customer->update($request->all()); 
         return redirect()->route('customers.index')->with('success', 'Customer updated successfully.'); // Redirect with success message
     }
 
-    // Remove the specified customer from storage
     public function destroy(Customer $customer)
     {
-        $customer->delete(); // Delete the customer
+        $customer->delete(); 
         return response()->json(['success' => true, 'message' => 'Customer deleted successfully.']); // Return success response
     }
 }

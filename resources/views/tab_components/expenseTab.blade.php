@@ -3,7 +3,7 @@
     aria-labelledby="expenses-tab{{ $project->id }}">
     <div class="mt-3">
         @if ($project->purchaseRequests->count() > 0)
-            <div class="table-responsive"> <!-- This makes the table responsive -->
+            <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -53,7 +53,7 @@
                                         @endphp
                                         @foreach ($purchaseRequest->materials as $material)
                                             @php
-                                                $stockTotal += $material->pivot->quantity * $material->unit_price; // Accumulate stock total
+                                                $stockTotal += $material->pivot->quantity * $material->unit_price;
                                             @endphp
                                             <p>${{ number_format($material->pivot->quantity * $material->unit_price, 2) }}
                                             </p>
@@ -79,11 +79,30 @@
                             <td colspan="5" class="text-right"><strong>Overall Total:</strong></td>
                             <td><strong>${{ number_format($overallTotal, 2) }}</strong></td>
                         </tr>
+                        <tr>
+                            <td colspan="5" class="text-right"><strong>Used Cost Percentage:</strong></td>
+                            <td>
+                                @php
+                                    $usedCostPercentage = $project->total_price
+                                        ? ($overallTotal / $project->total_price) * 100
+                                        : 0;
+                                    // Determine color based on percentage
+                                    $colorClass = 'text-danger'; // Default red
+                                    if ($usedCostPercentage <= 60) {
+                                        $colorClass = 'text-success'; // Green
+                                    } elseif ($usedCostPercentage > 60 && $usedCostPercentage <= 75) {
+                                        $colorClass = 'text-warning'; // Yellow
+                                    }
+                                @endphp
+                                <strong
+                                    class="{{ $colorClass }}">{{ number_format($usedCostPercentage, 2) }}%</strong>
+                            </td>
+                        </tr>
                     </tfoot>
                 </table>
-            </div> <!-- End of table-responsive -->
+            </div>
         @else
-            <p>No expenses for this project yet.</p>
+            <p>No costs for this project yet.</p>
         @endif
     </div>
 </div>

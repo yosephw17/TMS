@@ -8,18 +8,23 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
 class SettingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-setting', ['only' => ['index']]);
+        $this->middleware('permission:setting-view', ['only' => ['show']]);
+        $this->middleware('permission:setting-create', ['only' => ['store']]);
+        $this->middleware('permission:setting-update', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:setting-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         $companyInfos = CompanyInfo::all();
         return view('company_info.index', compact('companyInfos'));
     }
 
-    /**
-     * Store a newly created company info in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    
     public function store(Request $request)
     {
         $request->validate([
@@ -33,13 +38,11 @@ class SettingController extends Controller
     
         $companyInfoData = $request->all();
     
-        // Handle image upload
         if ($request->hasFile('logo')) {
             $imagePath = $request->file('logo')->store('logos', 'public'); // Store the image in 'storage/app/public/logos'
             $companyInfoData['logo'] = $imagePath; // Store the file path in the 'logo' field
         }
     
-        // Create a new company info record with the data
         CompanyInfo::create($companyInfoData);
     
         return redirect()->route('settings.index')->with('success', 'Company info added successfully.');
@@ -103,4 +106,5 @@ class SettingController extends Controller
         $companyInfo->delete();
         return redirect()->route('settings.index')->with('success', 'Company info deleted successfully.');
     }
+   
 }

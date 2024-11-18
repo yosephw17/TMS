@@ -7,10 +7,23 @@ use App\Models\Material;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
-{
+{ public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-stock', ['only' => ['index']]);
+        $this->middleware('permission:stock-view', ['only' => ['show']]);
+        $this->middleware('permission:stock-create', ['only' => ['store']]);
+        $this->middleware('permission:stock-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:stock-delete', ['only' => ['destroy']]);
+        $this->middleware('permission:stock-add-material', ['only' => ['addMaterial']]);
+        $this->middleware('permission:stock-remove-material', ['only' => ['removeMaterial']]);
+    }
+
     public function index()
     {
-        $stocks = Stock::all(); // Fetch all stocks
+        $stocks = Stock::all();
         return view('stocks.index', compact('stocks'));
     }
 
@@ -28,35 +41,49 @@ class StockController extends Controller
 
     public function show($id)
     {
-        $stock = Stock::with('materials')->findOrFail($id); // Load stock with its related materials
-        $materials = Material::all(); // Get all available materials
+        $stock = Stock::with('materials')->findOrFail($id); 
+        $materials = Material::all(); 
         return view('stocks.show', compact('stock', 'materials'));
     }
 
     public function addMaterial(Request $request, $id)
-{
-    $request->validate([
-        'material_id' => 'required|exists:materials,id',
-        'quantity' => 'required|integer|min:1',
-    ]);
-
-    $stock = Stock::findOrFail($id);
-    $materialId = $request->input('material_id');
-    $quantity = $request->input('quantity');
-
-    // Check if the material is already attached to this stock
-    if ($stock->materials()->where('material_id', $materialId)->exists()) {
-        // Update the existing quantity
-        $existingQuantity = $stock->materials()->where('material_id', $materialId)->first()->pivot->quantity;
-        $newQuantity = $existingQuantity + $quantity;
-        $stock->materials()->updateExistingPivot($materialId, ['quantity' => $newQuantity]);
-    } else {
-        // Attach the material with the new quantity
-        $stock->materials()->attach($materialId, ['quantity' => $quantity]);
+    {
+        $request->validate([
+            'materials' => 'required|array|min:1', // Ensure at least one material is selected
+            'materials.*' => 'exists:materials,id', // Validate each material ID exists
+            'quantities' => 'required|array', // Ensure quantities array is provided
+        ]);
+    
+        $selectedMaterials = $request->input('materials'); // Get selected material IDs
+    
+        // Validate only quantities for selected materials
+        foreach ($selectedMaterials as $materialId) {
+            $request->validate([
+                "quantities.$materialId" => 'required|integer|min:1', // Validate quantity for each selected material
+            ]);
+        }
+    
+        $stock = Stock::findOrFail($id);
+    
+        foreach ($selectedMaterials as $materialId) {
+            $quantity = $request->input("quantities.$materialId");
+    
+            // Check if the material is already attached to this stock
+            if ($stock->materials()->where('material_id', $materialId)->exists()) {
+                // Update the existing quantity
+                $existingQuantity = $stock->materials()->where('material_id', $materialId)->first()->pivot->quantity;
+                $newQuantity = $existingQuantity + $quantity;
+                $stock->materials()->updateExistingPivot($materialId, ['quantity' => $newQuantity]);
+            } else {
+                // Attach the material with the new quantity
+                $stock->materials()->attach($materialId, ['quantity' => $quantity]);
+            }
+        }
+    
+        return redirect()->route('stocks.show', $id)->with('success', 'Materials added/updated successfully.');
     }
-
-    return redirect()->route('stocks.show', $id)->with('success', 'Material added/updated successfully.');
-}
+    
+    
 
 public function removeMaterial(Request $request, $stockId, $materialId)
 {
@@ -66,19 +93,15 @@ public function removeMaterial(Request $request, $stockId, $materialId)
 
     $stock = Stock::findOrFail($stockId);
 
-    // Check if the material exists in the stock
     $existingMaterial = $stock->materials()->where('material_id', $materialId)->firstOrFail();
     $existingQuantity = $existingMaterial->pivot->quantity;
 
-    // Subtract the quantity
     $quantityToRemove = $request->input('quantity');
     $newQuantity = $existingQuantity - $quantityToRemove;
 
     if ($newQuantity <= 0) {
-        // Remove the material entirely if quantity becomes zero or less
         $stock->materials()->detach($materialId);
     } else {
-        // Update the quantity in the pivot table
         $stock->materials()->updateExistingPivot($materialId, ['quantity' => $newQuantity]);
     }
 

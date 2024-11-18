@@ -6,18 +6,18 @@
             <div class="pull-left">
                 <h2>{{ $customer->name }}'s Project</h2>
             </div>
-            <div class="pull-right">
+            {{-- <div class="pull-right">
                 <!-- Button to trigger modal -->
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#serviceModal">
                     Add Project
                 </button>
-            </div>
+            </div> --}}
         </div>
     </div>
 
 
 
-    <!-- Modal -->
+    {{-- <!-- Modal -->
     <div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -93,7 +93,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
 
 
@@ -104,10 +104,11 @@
             text-white d-flex justify-content-between align-items-center">
             <h4>{{ $project->name }}</h4>
             <!-- Edit Button -->
-            <button class="btn btn-sm btn-light" data-bs-toggle="modal"
-                data-bs-target="#editProjectModal{{ $project->id }}">
-                Edit
-            </button>
+            @can('proforma-edit')
+                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#editProjectModal{{ $project->id }}">
+                    Edit
+                </button>
+            @endcan
         </div>
 
         <!-- Edit Project Modal -->
@@ -222,10 +223,18 @@
                         data-bs-target="#quantity{{ $project->id }}" type="button" role="tab"
                         aria-controls="quantity{{ $project->id }}" aria-selected="false">Quantity</button>
                 </li>
+
+
+
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="expenses-tab{{ $project->id }}" data-bs-toggle="tab"
                         data-bs-target="#expenses{{ $project->id }}" type="button" role="tab"
-                        aria-controls="expenses{{ $project->id }}" aria-selected="false">Expenses</button>
+                        aria-controls="expenses{{ $project->id }}" aria-selected="false">Costs</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="proformas-tab{{ $project->id }}" data-bs-toggle="tab"
+                        data-bs-target="#proformas{{ $project->id }}" type="button" role="tab"
+                        aria-controls="proformas{{ $project->id }}" aria-selected="false">Proformas</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="images-tab{{ $project->id }}" data-bs-toggle="tab"
@@ -233,10 +242,14 @@
                         aria-controls="images{{ $project->id }}" aria-selected="false">Images</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="proformas-tab{{ $project->id }}" data-bs-toggle="tab"
-                        data-bs-target="#proformas{{ $project->id }}" type="button" role="tab"
-                        aria-controls="proformas{{ $project->id }}" aria-selected="false">Proformas</button>
+                    <button class="nav-link" id="daily-tasks-tab{{ $project->id }}" data-bs-toggle="tab"
+                        data-bs-target="#daily-tasks{{ $project->id }}" type="button" role="tab"
+                        aria-controls="daily-tasks{{ $project->id }}" aria-selected="false">
+                        Daily Tasks
+                    </button>
                 </li>
+
+
             </ul>
 
             <!-- Tab Content -->
@@ -252,6 +265,41 @@
                 @include('tab_components.imageTab')
 
                 @include('tab_components.proformaTab')
+                <div class="tab-pane fade" id="daily-tasks{{ $project->id }}" role="tabpanel"
+                    aria-labelledby="daily-tasks-tab{{ $project->id }}">
+                    <div>
+                        <h5>Daily Tasks for Project: {{ $project->name }}</h5>
+
+                        <!-- Form to Add New Task -->
+                        <form action="{{ route('daily_activities.store') }}" method="POST">
+                            @csrf
+                            <div class="form-group">
+                                <label for="description">Task Description</label>
+                                <textarea name="description" class="form-control" required></textarea>
+                            </div>
+                            <input type="hidden" name="project_id" value="{{ $project->id }}">
+                            <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+                            @can('daily-activity-create')
+                                <button type="submit" class="btn btn-primary mt-3">Add Task</button>
+                            @endcan
+                        </form>
+
+                        <!-- Display Existing Tasks -->
+                        <h5 class="mt-4">Existing Tasks</h5>
+                        @if ($dailyActivities->count() > 0)
+                            <ul class="list-group">
+                                @foreach ($dailyActivities as $activity)
+                                    <li class="list-group-item">
+                                        <strong>{{ $activity->user->name }}</strong>: {{ $activity->description }}
+                                        <em class="text-muted"> - {{ $activity->created_at->format('M d, Y') }}</em>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p>No daily tasks added for this project yet.</p>
+                        @endif
+                    </div>
+                </div>
 
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {

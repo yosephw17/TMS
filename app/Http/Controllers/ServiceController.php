@@ -8,7 +8,17 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 { 
-  
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        $this->middleware('permission:manage-service', ['only' => ['index']]);
+        $this->middleware('permission:service-view', ['only' => ['show']]);
+        $this->middleware('permission:service-create', ['only' => ['store']]);
+        $this->middleware('permission:service-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:service-delete', ['only' => ['destroy']]);
+    }
  
     public function index()
     {

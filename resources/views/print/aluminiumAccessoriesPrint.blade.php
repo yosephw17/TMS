@@ -21,6 +21,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
             border-radius: 8px;
+            position: relative;
         }
 
         header {
@@ -42,9 +43,22 @@
             height: 120px;
         }
 
+        /* Company and Client Details Side by Side */
         .company-details,
         .client-details {
+            display: inline-block;
+            width: 48%;
+            /* Adjust the width as needed */
+            vertical-align: top;
             margin-bottom: 20px;
+        }
+
+        .company-details {
+            padding-right: 20px;
+        }
+
+        .client-details {
+            padding-left: 20px;
         }
 
         .company-details p,
@@ -97,16 +111,12 @@
             font-size: 18px;
         }
 
-
-
         .footer-list {
             list-style-type: none;
             padding: 0;
             margin: 0;
             display: inline-block;
-            /* Make it center align */
             text-align: left;
-            /* Ensure text inside is left-aligned */
         }
 
         .footer-list li {
@@ -115,6 +125,15 @@
 
         .footer-list li strong {
             color: #555;
+        }
+
+        /* QR Code styling */
+        .qr-code {
+            position: relative;
+            left: 20px;
+            top: 0px;
+            width: 80px;
+            height: 80px;
         }
     </style>
 </head>
@@ -144,18 +163,6 @@
             <p><strong>Subject:</strong>
                 {{ $proforma->type === 'aluminium_profile' ? 'Aluminum Profiles' : 'Aluminum Accessories' }}</p>
         </div>
-
-        {{-- <div class="invoice-info">
-            <div>
-                <p><strong>Invoice No:</strong> {{ $proforma->ref_no }}</p>
-            </div>
-            <div>
-                <p><strong>Payment Terms:</strong> 100%</p>
-            </div>
-            <div>
-                <p><strong>Price Validity:</strong> Two Days</p>
-            </div>
-        </div> --}}
 
         <table>
             <thead>
@@ -197,6 +204,10 @@
                 <li><strong>Delivery:</strong> From Store</li>
             </ul>
         </footer>
+
+        <!-- QR Code positioned at the bottom right corner -->
+        <img src="{{ asset('images\qr-code.png') }}" alt="QR Code" class="qr-code" />
+
     </div>
 
     <script>

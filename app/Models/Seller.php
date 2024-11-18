@@ -9,4 +9,8 @@ class Seller extends Model
 {
     use HasFactory;
     protected $fillable=['name','phone'];
+    public function proformaImages()
+    {
+        return $this->hasMany(ProformaImage::class);
+    }
 }

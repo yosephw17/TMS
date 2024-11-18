@@ -8,6 +8,18 @@ use Illuminate\Http\Request;
 class MaterialController extends Controller
 {
     // Display a listing of the resource
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth');
+
+        // Apply permission middleware for specific actions
+        $this->middleware('permission:manage-material', ['only' => ['index']]);
+        $this->middleware('permission:material-view', ['only' => ['show']]);
+        $this->middleware('permission:material-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:material-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:material-delete', ['only' => ['destroy']]);
+    }
     public function index()
     {
         $materials = Material::all();
@@ -23,6 +35,7 @@ class MaterialController extends Controller
             'color' => 'nullable|string|max:255',
             'unit_price' => 'required|numeric',
             'unit_of_measurement' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
         ]);
 
         $material = new Material();
@@ -31,6 +44,7 @@ class MaterialController extends Controller
         $material->color = $request->color;
         $material->unit_price = $request->unit_price;
         $material->unit_of_measurement = $request->unit_of_measurement;
+        $material->type = $request->type;
         if ($request->hasFile('symbol')) {
             $imagePath = $request->file('symbol')->store('materials', 'public'); 
             $material->symbol = $imagePath;
@@ -53,6 +67,7 @@ class MaterialController extends Controller
             'symbol' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate the symbol as an image
             'unit_price' => 'required|numeric',
             'unit_of_measurement' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
             'color' => 'nullable|string|max:255', // Validate the color field
         ]);
     
@@ -61,6 +76,7 @@ class MaterialController extends Controller
         $material->code = $request->code;
         $material->unit_price = $request->unit_price;
         $material->unit_of_measurement = $request->unit_of_measurement;
+        $material->type = $request->type;
         $material->color = $request->color;
     
         // Handle the symbol (image) upload

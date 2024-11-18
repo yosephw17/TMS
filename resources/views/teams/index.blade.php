@@ -5,7 +5,9 @@
         <h2>Teams</h2>
 
         <!-- Button to trigger modal to add new team -->
-        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addTeamModal">Add Team</button>
+        @can('team-create')
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addTeamModal">Add Team</button>
+        @endcan
 
         <!-- Team List Table -->
         <table class="table table-bordered">
@@ -24,21 +26,27 @@
                         <td>
                             <div class="btn-group" role="group">
                                 <!-- Show Button -->
-                                <button class="btn btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#showTeamModal{{ $team->id }}">Show</button>
+                                @can('team-view')
+                                    <button class="btn btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#showTeamModal{{ $team->id }}">Show</button>
+                                @endcan
 
                                 <!-- Edit Button -->
-                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#editTeamModal{{ $team->id }}"><i
-                                        class="fa-regular fa-pen-to-square"></i></button>
+                                @can('team-update')
+                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#editTeamModal{{ $team->id }}"><i
+                                            class="fa-regular fa-pen-to-square"></i></button>
+                                @endcan
 
                             </div>
                             <!-- Delete Form -->
                             {!! Form::open(['method' => 'DELETE', 'route' => ['teams.destroy', $team->id], 'style' => 'display:inline']) !!}
-                            <button type="submit" class="btn btn-outline-danger"
-                                onclick="return confirm('Are you sure you want to delete this team?')"> <i
-                                    class="fa-solid fa-trash-can fa-lg"></i>
-                            </button>
+                            @can('team-delete')
+                                <button type="submit" class="btn btn-outline-danger"
+                                    onclick="return confirm('Are you sure you want to delete this team?')"> <i
+                                        class="fa-solid fa-trash-can fa-lg"></i>
+                                </button>
+                            @endcan
                             {!! Form::close() !!}
     </div>
     </td>

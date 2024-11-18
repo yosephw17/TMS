@@ -12,6 +12,7 @@ class Project extends Model
 'name', 'customer_id', 'starting_date', 'ending_date', 'description','location','total_price','status'
     ];
 
+
     public function serviceDetails()
     {
         return $this->belongsToMany(ServiceDetail::class, 'project_service_detail');
@@ -41,5 +42,9 @@ public function proformas(){
 }
 public function purchaseRequests(){
     return $this->hasMany(PurchaseRequest::class);
+}
+public function proformaImages()
+{
+    return $this->hasMany(ProformaImage::class);
 }
 }

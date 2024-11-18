@@ -7,9 +7,11 @@
                 <h2>Customer Management</h2>
             </div>
             <div class="pull-right">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCustomerModal">
-                    Create New Customer
-                </button>
+                @can('customer-create')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCustomerModal">
+                        Create New Customer
+                    </button>
+                @endcan
             </div>
         </div>
     </div>
@@ -34,22 +36,30 @@
                             <td>{{ $customer->phone }}</td>
                             <td>{{ $customer->address }}</td>
                             <td>
-                                <button class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#showCustomerModal{{ $customer->id }}">
-                                    Show
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editCustomerModal{{ $customer->id }}">
-                                    <i class="fa-regular fa-pen-to-square"></i>
+                                @can('customer-view')
+                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#showCustomerModal{{ $customer->id }}">
+                                        Show
+                                    </button>
+                                @endcan
+                                @can('customer-edit')
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#editCustomerModal{{ $customer->id }}">
+                                        <i class="fa-regular fa-pen-to-square"></i>
 
-                                </button>
-                                <button type="button" class="btn btn-outline-danger"
-                                    onclick="deleteCustomer({{ $customer->id }})" style="border:none;">
-                                    <i class="fa-solid fa-trash-can fa-lg"></i>
-                                </button>
-                                <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-sm btn-primary">
-                                    View Projects
-                                </a>
+                                    </button>
+                                @endcan
+                                @can('customer-delete')
+                                    <button type="button" class="btn btn-outline-danger"
+                                        onclick="deleteCustomer({{ $customer->id }})" style="border:none;">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </button>
+                                @endcan
+                                @can('project-view')
+                                    <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-sm btn-primary">
+                                        View Projects
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
 
