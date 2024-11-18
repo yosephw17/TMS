@@ -55,16 +55,16 @@ class UserController extends Controller
         'password' => 'required|same:confirm-password|min:4',
         'roles' => 'required|array',
         'roles.*' => 'exists:roles,name',
-        'phone' => 'required|string|max:15', // Add validation for phone
-        'address' => 'required|string|max:255', // Add validation for address
+        'phone' => 'required|string|max:15', 
+        'address' => 'required|string|max:255', 
     ]);
 
     $user = User::create([
         'name' => $request->input('name'),
         'email' => $request->input('email'),
         'password' => Hash::make($request->input('password')),
-        'phone' => $request->input('phone'), // Include phone
-        'address' => $request->input('address'), // Include address
+        'phone' => $request->input('phone'), 
+        'address' => $request->input('address'), 
     ]);
     $user->syncRoles($request->input('roles'));
 
@@ -98,14 +98,11 @@ class UserController extends Controller
     public function addToTeam(Request $request, $userId)
     {
         $request->validate([
-            'team_ids' => 'required|array',   // Ensure team_ids is an array
-            'team_ids.*' => 'exists:teams,id' // Ensure each team ID exists in the teams table
+            'team_ids' => 'required|array',  
+            'team_ids.*' => 'exists:teams,id' 
         ]);
 
-        // Find the user
         $user = User::findOrFail($userId);
-
-        // Attach the user to the selected teams (many-to-many relationship)
         $user->teams()->sync($request->team_ids);
 
         return redirect()->route('users.index')->with('success', 'User added to teams successfully.');

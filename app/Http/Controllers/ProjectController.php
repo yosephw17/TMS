@@ -44,9 +44,7 @@ class ProjectController extends Controller
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+  
     public function store(Request $request)
 {
     $validatedData = $request->validate([
@@ -60,28 +58,20 @@ class ProjectController extends Controller
         'team_ids' => 'nullable|array',
     ]);
 
-    // Create the project
     $project = Project::create($validatedData);
 
-    // Attach selected service details to the project
     if ($request->has('service_detail_ids')) {
         $project->serviceDetails()->sync($request->service_detail_ids);
     }
 
-    // Attach selected teams to the project
     if ($request->has('team_ids')) {
         $project->teams()->sync($request->team_ids);
     }
 
     return redirect()->back()->with('success', 'Project created successfully.');    }
     
-
-    /**
-     * Display the specified resource.
-     */
     public function show($customerId)
     {
-        // Retrieve the customer and their associated projects
         $customer = Customer::findOrFail($customerId);
         $projects = Project::where('customer_id', $customerId)->get();
         
@@ -89,7 +79,6 @@ $services=Service::all();
 $materials=Material::all();
 $teams=Team::all();
 
-        // Return the view with customer and projects data
         return view('projects.show', compact('customer', 'projects','services','materials','teams', 
        ));
     }
@@ -114,22 +103,15 @@ $teams=Team::all();
             'profileProformas', 
             'accessoriesProformas', 
             'workProformas',
-            'dailyActivities' // Passing daily activities to the view
+            'dailyActivities' 
         ));
     }
-    
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Project $project)
     {
         $request->validate([
@@ -217,10 +199,8 @@ public function uploadFiles(Request $request, $projectId)
     }
 public function destroyMaterial(Project $project, Material $material)
 {
-    // Remove the material from the project's materials pivot table
     $project->materials()->detach($material->id);
 
-    // Redirect back with a success message
     return redirect()->back()->with('success', 'Material deleted successfully.');
 }
 public function printMaterials(Project $project)
@@ -230,10 +210,6 @@ public function printMaterials(Project $project)
     return view('print.materialsPrint', compact('project','companyInfo'));
 }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         //

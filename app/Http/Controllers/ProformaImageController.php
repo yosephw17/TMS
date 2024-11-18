@@ -12,7 +12,6 @@ class ProformaImageController extends Controller
 
  public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
         $this->middleware('permission:manage-proforma-image', ['only' => ['index']]);
@@ -36,19 +35,18 @@ class ProformaImageController extends Controller
         $request->validate([
             'seller_id' => 'required|exists:sellers,id',
             'project_id' => 'required|exists:projects,id',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image with correct input name
-            'type' => 'required|string', // Validate proforma type with correct input name
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'type' => 'required|string',
             'description' => 'nullable|string'
         ]);
     
-        // Store the image
         $imagePath = $request->file('image')->store('proforma_images', 'public');
     
         ProformaImage::create([
             'seller_id' => $request->seller_id,
             'project_id' => $request->project_id,
             'image_path' => $imagePath,
-            'proforma_type' => $request->type, // Update to match the input name
+            'proforma_type' => $request->type, 
             'description' => $request->description,
         ]);
     
@@ -57,17 +55,16 @@ class ProformaImageController extends Controller
     public function approve($id)
     {
         $proformaImage = ProformaImage::findOrFail($id);
-        $proformaImage->status = 'approved'; // Update status to approved
+        $proformaImage->status = 'approved'; 
         $proformaImage->save();
 
         return redirect()->back()->with('success', 'Proforma image approved successfully.');
     }
 
-    // Decline a Proforma Image
     public function decline($id)
     {
         $proformaImage = ProformaImage::findOrFail($id);
-        $proformaImage->status = 'declined'; // Update status to declined
+        $proformaImage->status = 'declined'; 
         $proformaImage->save();
 
         return redirect()->back()->with('success', 'Proforma image declined successfully.');

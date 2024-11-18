@@ -103,9 +103,7 @@
             padding: 0;
             margin: 0;
             display: inline-block;
-            /* Make it center align */
             text-align: left;
-            /* Ensure text inside is left-aligned */
         }
 
         .footer-list li {

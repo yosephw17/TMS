@@ -39,14 +39,12 @@
                                         View
                                     </a>
                                 @endcan
-                                <!-- Edit Button -->
                                 @can('stock-update')
                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                         data-bs-target="#editStockModal-{{ $stock->id }}">
                                         <i class="fa-regular fa-pen-to-square"></i> </button>
                                 @endcan
 
-                                <!-- Delete Button -->
                                 <form id="delete-form-{{ $stock->id }}"
                                     action="{{ route('stocks.destroy', $stock->id) }}" method="POST"
                                     style="display:inline;">

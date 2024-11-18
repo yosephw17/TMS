@@ -9,7 +9,6 @@
         @endcan
 
         <div class="card-body">
-            <!-- Table to show existing sellers -->
             <table id="datatablesSimple" class="table">
                 <thead>
                     <tr>
@@ -49,7 +48,6 @@
                                     @endcan
                                 </form>
 
-                                <!-- Proformas Button -->
                                 @can('proforma-image-view')
                                     <a href="{{ route('proforma_images.index', ['seller_id' => $seller->id]) }}"
                                         class="btn btn-primary">View Proformas</a>

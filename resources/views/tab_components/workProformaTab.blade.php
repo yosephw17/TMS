@@ -67,7 +67,6 @@
                                       </td>
                                   </tr>
 
-                                  <!-- Collapsible Row for Work Details -->
                                   <tr class="collapse bg-light" id="collapseProforma{{ $proforma->id }}">
                                       <td colspan="8">
                                           <div class="p-3">
@@ -96,7 +95,6 @@
                                                   </tbody>
                                               </table>
 
-                                              <!-- Additional Details for Each Work Proforma -->
                                               <div class="row mt-4">
                                                   <div class="col-md-6">
                                                       <p><strong>Payment Validity:</strong>
@@ -155,13 +153,11 @@
                                                           aria-label="Close"></button>
                                                   </div>
                                                   <div class="modal-body">
-                                                      <!-- Customer and Project Info -->
                                                       <input type="hidden" name="project_id"
                                                           value="{{ $project->id }}">
                                                       <input type="hidden" name="customer_id"
                                                           value="{{ $project->customer_id }}">
 
-                                                      <!-- Type Selection -->
                                                       <div class="form-group mb-3">
                                                           <label for="type">Type</label>
                                                           <select name="type" class="form-control" required>
@@ -174,7 +170,6 @@
                                                           </select>
                                                       </div>
 
-                                                      <!-- Reference Number -->
                                                       <div class="form-group mb-3">
                                                           <label for="ref_no">Reference Number</label>
                                                           <input type="text" name="ref_no" class="form-control"
@@ -182,14 +177,12 @@
                                                               placeholder="Enter reference number" required>
                                                       </div>
 
-                                                      <!-- Date Field -->
                                                       <div class="form-group mb-3">
                                                           <label for="date">Date</label>
                                                           <input type="date" name="date" class="form-control"
                                                               value="{{ $proforma->date }}" required>
                                                       </div>
 
-                                                      <!-- Discount and VAT -->
                                                       <div class="form-group mb-3">
                                                           <label for="discount">Discount</label>
                                                           <input type="number" name="discount" class="form-control"
@@ -203,7 +196,6 @@
                                                               value="{{ $proforma->vat_percentage }}" required>
                                                       </div>
 
-                                                      <!-- Payment Validity and Delivery Terms -->
                                                       <div class="form-group mb-3">
                                                           <label for="payment_validity">Payment Validity</label>
                                                           <input type="text" name="payment_validity"
@@ -219,7 +211,6 @@
                                                               placeholder="Enter delivery terms">
                                                       </div>
 
-                                                      <!-- Dynamic Work Entries (Existing Entries) -->
                                                       <div id="editWorkEntriesContainer">
                                                           @foreach ($proforma->works as $index => $work)
                                                               <div class="work-entry mb-3">
@@ -305,11 +296,9 @@
                       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body">
-                      <!-- Customer and Project Info -->
                       <input type="hidden" name="project_id" value="{{ $project->id }}">
                       <input type="hidden" name="customer_id" value="{{ $project->customer_id }}">
 
-                      <!-- Type Selection -->
                       <div class="form-group mb-3">
                           <label for="type">Type</label>
                           <select name="type" class="form-control" required>
@@ -318,20 +307,17 @@
                           </select>
                       </div>
 
-                      <!-- Reference Number -->
                       <div class="form-group mb-3">
                           <label for="ref_no">Reference Number</label>
                           <input type="text" name="ref_no" class="form-control"
                               placeholder="Enter reference number" required>
                       </div>
 
-                      <!-- Date Field -->
                       <div class="form-group mb-3">
                           <label for="date">Date</label>
                           <input type="date" name="date" class="form-control" required>
                       </div>
 
-                      <!-- Discount and VAT -->
                       <div class="form-group mb-3">
                           <label for="discount">Discount</label>
                           <input type="number" name="discount" class="form-control"
@@ -342,7 +328,6 @@
                           <input type="number" name="vat_percentage" value="15" class="form-control">
                       </div>
 
-                      <!-- Payment Validity and Delivery Terms -->
                       <div class="form-group mb-3">
                           <label for="payment_validity">Payment Validity</label>
                           <input type="text" name="payment_validity" class="form-control"
@@ -354,7 +339,6 @@
                               placeholder="Enter delivery terms">
                       </div>
 
-                      <!-- Dynamic Work Entries -->
                       <div id="addWorkEntriesContainer">
                           <div class="work-entry mb-3">
                               <h6>Work Entry</h6>
@@ -398,8 +382,7 @@
   </div>
 
   <script>
-      let addWorkEntryIndex = 1; // Index for adding new work entries in the Add Modal
-
+      let addWorkEntryIndex = 1;
       // Add new work entry in Add Modal
       document.getElementById('addWorkEntryBtn').addEventListener('click', function() {
           const addContainer = document.getElementById('addWorkEntriesContainer');
@@ -408,9 +391,6 @@
           addWorkEntryIndex++;
       });
 
-
-
-      // Function to create HTML for a new work entry
       function createWorkEntryHtml(index) {
           const entryDiv = document.createElement('div');
           entryDiv.className = 'work-entry mb-3';

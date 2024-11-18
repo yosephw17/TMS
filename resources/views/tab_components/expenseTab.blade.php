@@ -17,7 +17,7 @@
                     </thead>
                     <tbody>
                         @php
-                            $overallTotal = 0; // Initialize total variable
+                            $overallTotal = 0;
                         @endphp
 
                         @foreach ($project->purchaseRequests->where('status', 'approved') as $key => $purchaseRequest)
@@ -49,7 +49,7 @@
                                     </td>
                                     <td>
                                         @php
-                                            $stockTotal = 0; // Initialize stock total for this row
+                                            $stockTotal = 0;
                                         @endphp
                                         @foreach ($purchaseRequest->materials as $material)
                                             @php
@@ -59,7 +59,7 @@
                                             </p>
                                         @endforeach
                                         @php
-                                            $overallTotal += $stockTotal; // Accumulate overall total
+                                            $overallTotal += $stockTotal;
                                         @endphp
                                         <p>${{ number_format($stockTotal, 2) }}</p>
                                     </td>
@@ -67,7 +67,7 @@
                                     <td>{{ $purchaseRequest->details }}</td>
                                     <td>{{ $purchaseRequest->non_stock_price }}</td>
                                     @php
-                                        $overallTotal += $purchaseRequest->non_stock_price; // Accumulate overall total
+                                        $overallTotal += $purchaseRequest->non_stock_price;
                                     @endphp
                                     <td>${{ number_format($purchaseRequest->non_stock_price, 2) }}</td>
                                 @endif
@@ -86,12 +86,11 @@
                                     $usedCostPercentage = $project->total_price
                                         ? ($overallTotal / $project->total_price) * 100
                                         : 0;
-                                    // Determine color based on percentage
-                                    $colorClass = 'text-danger'; // Default red
+                                    $colorClass = 'text-danger';
                                     if ($usedCostPercentage <= 60) {
-                                        $colorClass = 'text-success'; // Green
+                                        $colorClass = 'text-success';
                                     } elseif ($usedCostPercentage > 60 && $usedCostPercentage <= 75) {
-                                        $colorClass = 'text-warning'; // Yellow
+                                        $colorClass = 'text-warning';
                                     }
                                 @endphp
                                 <strong

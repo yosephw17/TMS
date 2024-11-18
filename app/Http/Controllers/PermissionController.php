@@ -9,10 +9,8 @@ class PermissionController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
-        // Apply permission middleware for specific actions
         $this->middleware('permission:manage-permission', ['only' => ['index']]);
         $this->middleware('permission:permission-view', ['only' => ['show']]);
         $this->middleware('permission:permission-create', ['only' => ['create', 'store']]);
@@ -21,7 +19,7 @@ class PermissionController extends Controller
     }
     public function index()
     {
-        $permissions = Permission::all(); // Fetch all permissions
+        $permissions = Permission::all(); 
         return view('permissions.index', compact('permissions'));
     }
 

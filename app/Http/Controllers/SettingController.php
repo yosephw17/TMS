@@ -39,8 +39,8 @@ class SettingController extends Controller
         $companyInfoData = $request->all();
     
         if ($request->hasFile('logo')) {
-            $imagePath = $request->file('logo')->store('logos', 'public'); // Store the image in 'storage/app/public/logos'
-            $companyInfoData['logo'] = $imagePath; // Store the file path in the 'logo' field
+            $imagePath = $request->file('logo')->store('logos', 'public');
+            $companyInfoData['logo'] = $imagePath; 
         }
     
         CompanyInfo::create($companyInfoData);
@@ -48,13 +48,7 @@ class SettingController extends Controller
         return redirect()->route('settings.index')->with('success', 'Company info added successfully.');
     }
     
-    /**
-     * Update the specified company info in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\CompanyInfo  $companyInfo
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, $id)  
       {
         
@@ -67,39 +61,25 @@ class SettingController extends Controller
             'email' => [
                 'required',
                 'email',
-                Rule::unique('company_infos')->ignore($companyInfo->id), // Proper uniqueness check for update
+                Rule::unique('company_infos')->ignore($companyInfo->id),
             ],
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
     
-        // Prepare company info data
         $companyInfoData = $request->all();
-    
-        // Handle logo upload if a new one is provided
-        if ($request->hasFile('logo')) {
-            // Delete the old logo if it exists
+            if ($request->hasFile('logo')) {
             if ($companyInfo->logo) {
                 Storage::disk('public')->delete($companyInfo->logo);
             }
-    
-            // Store the new logo
-            $imagePath = $request->file('logo')->store('logos', 'public');
+                $imagePath = $request->file('logo')->store('logos', 'public');
             $companyInfoData['logo'] = $imagePath;
         }
     
-        // Update the company info with the new data
         $companyInfo->update($companyInfoData);
     
         return redirect()->route('settings.index')->with('success', 'Company info updated successfully.');
     }
     
-
-    /**
-     * Remove the specified company info from storage.
-     *
-     * @param  \App\Models\CompanyInfo  $companyInfo
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $companyInfo=CompanyInfo::find($id);

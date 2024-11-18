@@ -41,7 +41,6 @@
             width: 120px;
         }
 
-        /* Flexbox for company and client details */
         .details-container {
             display: flex;
             justify-content: space-between;
@@ -51,7 +50,6 @@
         .company-details,
         .client-details {
             width: 48%;
-            /* Adjusts the width of each section */
         }
 
         .company-details p,
@@ -144,7 +142,6 @@
             @endif
         </header>
 
-        <!-- Flexbox container for company and client details -->
         <div class="details-container">
             <div class="company-details">
                 <p><strong>{{ $companyInfo->name }}</strong></p>
@@ -161,12 +158,12 @@
         </div>
 
         <div class="invoice-info">
-            <div>
+            {{-- <div>
                 <p><strong>Work Type:</strong> {{ $proforma->work_type }}</p>
             </div>
             <div>
                 <p><strong>Due Date:</strong> {{ \Carbon\Carbon::parse($proforma->due_date)->format('d/m/Y') }}</p>
-            </div>
+            </div> --}}
         </div>
 
         <table>

@@ -18,7 +18,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 3460.20,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:29:17',
                 'updated_at' => '2024-10-23 06:29:17',
             ],
@@ -30,7 +30,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 4007.70,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:30:01',
                 'updated_at' => '2024-10-23 06:30:01',
             ],
@@ -42,7 +42,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 5000.00,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:31:00',
                 'updated_at' => '2024-10-23 06:31:00',
             ],
@@ -54,7 +54,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 2000.00,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:33:30',
                 'updated_at' => '2024-10-23 06:33:30',
             ],
@@ -66,7 +66,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 1900.50,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:34:15',
                 'updated_at' => '2024-10-23 06:34:15',
             ],
@@ -78,7 +78,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 4500.25,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:35:00',
                 'updated_at' => '2024-10-23 06:35:00',
             ],
@@ -90,7 +90,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 3750.75,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:36:00',
                 'updated_at' => '2024-10-23 06:36:00',
             ],
@@ -102,7 +102,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 3950.90,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile',
                 'created_at' => '2024-10-23 06:37:00',
                 'updated_at' => '2024-10-23 06:37:00',
             ],
@@ -114,7 +114,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'black',
                 'unit_price' => 3200.00,
                 'unit_of_measurement' => 'bar',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:38:00',
                 'updated_at' => '2024-10-23 06:38:00',
             ],
@@ -126,7 +126,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'red',
                 'unit_price' => 1250.30,
                 'unit_of_measurement' => 'kg',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile', 
                 'created_at' => '2024-10-23 06:39:00',
                 'updated_at' => '2024-10-23 06:39:00',
             ],
@@ -138,7 +138,7 @@ class MaterialsSeeder extends Seeder
                 'color' => 'silver',
                 'unit_price' => 2250.50,
                 'unit_of_measurement' => 'm',
-                'type' => 'aluminium_profile', // Example type
+                'type' => 'aluminium_profile',
                 'created_at' => '2024-10-23 06:40:00',
                 'updated_at' => '2024-10-23 06:40:00',
             ]

@@ -12,10 +12,8 @@ class ProformaController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
 
-        // Apply permission middleware for specific actions
         $this->middleware('permission:manage-proforma', ['only' => ['index']]);
         $this->middleware('permission:proforma-view', ['only' => ['show']]);
         $this->middleware('permission:proforma-create', ['only' => ['create', 'store','storeAccessoriesProforma', 'updateAccessoriesProforma']]);
@@ -23,14 +21,12 @@ class ProformaController extends Controller
         $this->middleware('permission:proforma-delete', ['only' => ['destroy','destroyAccessoriesProforma']]);
         $this->middleware('permission:proforma-print', ['only' => ['print','printAccessories','printWork']]);
     }
-    // Display list of proformas
     public function index(Project $project)
     {
         $proformas = $project->proformas;
         return view('proformas.index', compact('proformas', 'project'));
     }
 
-    // Store a new proforma
     public function store(Request $request)
     {        
         
@@ -50,12 +46,12 @@ class ProformaController extends Controller
             'date' => 'required|date',
             'materials' => 'nullable|array',
             'materials.*.quantity' => 'nullable|numeric|min:0',
-            'labor_cost' => 'nullable|numeric|min:0', // For work proforma
-            'other_costs' => 'nullable|numeric|min:0', // For work proforma
+            'labor_cost' => 'nullable|numeric|min:0', 
+            'other_costs' => 'nullable|numeric|min:0', 
         ]);
     
 
-        // Calculate totals
+        
         $beforeVatTotal = 0;
         $materials = $request->input('materials', []);
         
@@ -67,7 +63,6 @@ class ProformaController extends Controller
             }
         }
 
-        // Add labor and other costs for work proforma
         if ($request->type === 'work') {
             $beforeVatTotal += $request->input('labor_cost', 0) + $request->input('other_costs', 0);
         }
@@ -76,7 +71,6 @@ class ProformaController extends Controller
         $afterVatTotal = $beforeVatTotal + $vatAmount;
         $finalTotal = $afterVatTotal - $request->input('discount', 0);
 
-        // Create proforma
         $proforma = Proforma::create([
             'project_id' => $request->input('project_id'),
             'customer_id' => $request->input('customer_id'),
@@ -93,14 +87,11 @@ class ProformaController extends Controller
             'date' => $request->input('date'),
         ]);
 
-        // Attach materials to the proforma
         if (!empty($materials)) {
             foreach ($materials as $materialId => $materialData) {
                 if (isset($materialData['selected']) && $materialData['selected'] == true) {
-                    // Retrieve the material
                     $material = Material::findOrFail($materialId);
                     
-                    // Attach the material to the proforma with quantity and total price
                     $proforma->materials()->attach($materialId, [
                         'quantity' => $materialData['quantity'],
                         'total_price' => $material->unit_price * $materialData['quantity'],
@@ -114,14 +105,12 @@ class ProformaController extends Controller
                          ->with('success', 'Proforma created successfully.');
     }
 
-    // Edit a proforma
     public function edit(Proforma $proforma)
     {
         $materials = Material::all();
         return view('proformas.edit', compact('proforma', 'materials'));
     }
 
-    // Update a proforma
     public function update(Request $request, Proforma $proforma)
     {
         $request->validate([
@@ -140,23 +129,21 @@ class ProformaController extends Controller
             'date' => 'required|date',
             'materials' => 'nullable|array',
             'materials.*.quantity' => 'nullable|numeric|min:0',
-            'labor_cost' => 'nullable|numeric|min:0', // For work proforma
-            'other_costs' => 'nullable|numeric|min:0', // For work proforma
+            'labor_cost' => 'nullable|numeric|min:0', 
+            'other_costs' => 'nullable|numeric|min:0', 
         ]);
     
-        // Calculate totals
         $beforeVatTotal = 0;
         $materials = $request->input('materials', []);
         
         foreach ($materials as $materialId => $materialData) {
-            if (!empty($materialData['selected'])) { // Only consider selected materials
+            if (!empty($materialData['selected'])) { 
                 $material = Material::findOrFail($materialId);
                 
                 $beforeVatTotal += $material->unit_price * $materialData['quantity'];
             }
         }
     
-        // Add labor and other costs for work proforma
         if ($request->type === 'work') {
             $beforeVatTotal += $request->input('labor_cost', 0) + $request->input('other_costs', 0);
         }
@@ -165,7 +152,6 @@ class ProformaController extends Controller
         $afterVatTotal = $beforeVatTotal + $vatAmount;
         $finalTotal = $afterVatTotal - $request->input('discount', 0);
     
-        // Update proforma
         $proforma->update([
             'project_id' => $request->input('project_id'),
             'customer_id' => $request->input('customer_id'),
@@ -182,11 +168,10 @@ class ProformaController extends Controller
             'date' => $request->input('date'),
         ]);
     
-        // Sync materials to the proforma
         if (!empty($materials)) {
             $syncData = [];
             foreach ($materials as $materialId => $materialData) {
-                if (!empty($materialData['selected'])) { // Only attach selected materials
+                if (!empty($materialData['selected'])) { 
                     // Retrieve the material
                     $material = Material::findOrFail($materialId);
                     
@@ -241,7 +226,7 @@ public function storeAccessoriesProforma(Request $request)
         'final_total' => 'required|numeric',
         'payment_validity' => 'nullable|string|max:255',
         'delivery_terms' => 'nullable|string|max:255',
-        'materials' => 'required|array', // Keep using 'materials'
+        'materials' => 'required|array', 
     ]);
 
     $proforma = Proforma::create([
@@ -255,7 +240,7 @@ public function storeAccessoriesProforma(Request $request)
         'final_total' => $validated['final_total'],
         'payment_validity' => $validated['payment_validity'],
         'delivery_terms' => $validated['delivery_terms'],
-        'type' => 'aluminium_accessory', // Set type for accessories
+        'type' => 'aluminium_accessory', 
     ]);
 
     // Attach selected materials with quantities
@@ -268,7 +253,6 @@ public function storeAccessoriesProforma(Request $request)
 
     return redirect()->route('accessoriesProformas.index', ['project_id' => $request->project_id])->with('success', 'Proforma created successfully.');
 }
-// Function to update an Aluminium Accessories Proforma
 public function updateAccessoriesProforma(Request $request, Proforma $proforma)
 {
     
@@ -309,14 +293,12 @@ public function updateAccessoriesProforma(Request $request, Proforma $proforma)
     return redirect()->route('accessoriesProformas.index', ['project_id' => $proforma->project_id])->with('success', 'Proforma updated successfully.');
 }
 
-// Function to delete an Aluminium Accessories Proforma
 public function destroyAccessoriesProforma(Proforma $proforma)
 {
     $proforma->delete();
     return redirect()->route('accessoriesProformas.index', ['project_id' => $proforma->project_id])->with('success', 'Proforma deleted successfully.');
 }
 
-    // Delete a proforma
     public function destroy(Proforma $proforma)
     {
         $proforma->materials()->detach();

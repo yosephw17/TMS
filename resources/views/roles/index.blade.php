@@ -7,7 +7,6 @@
                 <h2>Role Management</h2>
             </div>
             <div class="pull-right">
-                <!-- Changed data-toggle and data-target to Bootstrap 5 format -->
                 @can('role-create')
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createRoleModal">
                         Create New Role
@@ -33,19 +32,16 @@
                             <td>{{ ++$i }}</td>
                             <td>{{ $role->name }}</td>
                             <td>
-                                <!-- Show Role Modal Button -->
                                 @can('role-view')
                                     <button class="btn btn-info" data-bs-toggle="modal"
                                         data-bs-target="#showRoleModal{{ $role->id }}">Show</button>
                                 @endcan
 
-                                <!-- Edit Role Modal Button -->
                                 @can('role-update')
                                     <button class="btn btn-outline-primary" data-bs-toggle="modal"
                                         data-bs-target="#editRoleModal{{ $role->id }}">Edit</button>
                                 @endcan
 
-                                <!-- Delete Form -->
                                 {!! Form::open([
                                     'method' => 'DELETE',
                                     'route' => ['roles.destroy', $role->id],
@@ -60,7 +56,6 @@
                             </td>
                         </tr>
 
-                        <!-- Show Role Modal -->
                         <div class="modal fade" id="showRoleModal{{ $role->id }}" tabindex="-1"
                             aria-labelledby="showRoleModalLabel{{ $role->id }}" aria-hidden="true">
                             <div class="modal-dialog">
@@ -83,7 +78,6 @@
                             </div>
                         </div>
 
-                        <!-- Edit Role Modal -->
                         <div class="modal fade" id="editRoleModal{{ $role->id }}" tabindex="-1"
                             aria-labelledby="editRoleModalLabel{{ $role->id }}" aria-hidden="true">
                             <div class="modal-dialog">

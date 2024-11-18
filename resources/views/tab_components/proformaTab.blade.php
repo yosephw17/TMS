@@ -4,16 +4,13 @@
     aria-labelledby="proformas-tab{{ $project->id }}">
     <div class="card mb-4">
 
-        <!-- Card Header -->
         <div class="card-header  text-white">
             <h5>{{ $project->name }} Proformas</h5>
         </div>
 
         <!-- Tabs for Proforma Types -->
         <div class="card-body">
-            <!-- Tabs for Buyer and Seller Proformas -->
             <ul class="nav nav-tabs" id="mainProformaTabs{{ $project->id }}" role="tablist">
-                <!-- Buyer Proforma Tab -->
                 <li class="nav-item" role="presentation">
                     <a class="nav-link active" id="buyer-tab{{ $project->id }}" data-bs-toggle="tab"
                         href="#buyerProforma{{ $project->id }}" role="tab"
@@ -21,7 +18,6 @@
                         <i class="bi bi-person"></i> Aluminium Proforma
                     </a>
                 </li>
-                <!-- Seller Proforma Tab -->
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="seller-tab{{ $project->id }}" data-bs-toggle="tab"
                         href="#sellerProforma{{ $project->id }}" role="tab"
@@ -33,11 +29,9 @@
 
             <!-- Tab Content for Buyer and Seller Proformas -->
             <div class="tab-content mt-3" id="mainProformaTabContent{{ $project->id }}">
-                <!-- Buyer Proforma Content -->
                 <div class="tab-pane fade show active" id="buyerProforma{{ $project->id }}" role="tabpanel"
                     aria-labelledby="buyer-tab{{ $project->id }}">
                     <div class="card-body">
-                        <!-- Tabs inside Buyer Proforma -->
                         <ul class="nav nav-tabs" id="proformaTabs{{ $project->id }}" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link active" id="profile-tab{{ $project->id }}" data-bs-toggle="tab"
@@ -62,7 +56,6 @@
                             </li>
                         </ul>
 
-                        <!-- Tab Content inside Buyer Proforma -->
                         <div class="tab-content mt-3" id="proformaTabContent{{ $project->id }}">
                             <!-- Aluminium Profile Proforma Content -->
                             @include('tab_components.aluminiumProfileTab')

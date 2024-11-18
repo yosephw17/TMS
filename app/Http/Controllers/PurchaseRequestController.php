@@ -38,7 +38,6 @@ class PurchaseRequestController extends Controller
     }
     public function store(Request $request)
     {
-        // Validate the incoming request data
         $request->validate([
             'project_id' => 'required|exists:projects,id',
             'type' => 'required|string|in:material_stock,material_non_stock,labour,transport',
@@ -52,7 +51,6 @@ class PurchaseRequestController extends Controller
             'details' => 'nullable|required_if:type,labour,transport|string|max:1000', // Details for labour/transport must be string
         ]);
     
-        // Determine the price to save
         $price = null;
         if (in_array($request->type, ['labour', 'transport'])) {
             $price = $request->labour_transport_price;
@@ -60,7 +58,6 @@ class PurchaseRequestController extends Controller
             $price = $request->non_stock_price;
         }
     
-        // Create a new purchase request
         $purchaseRequest = PurchaseRequest::create([
             'project_id' => $request->project_id,
             'stock_id' => $request->stock_id,
@@ -75,18 +72,15 @@ class PurchaseRequestController extends Controller
             'details' => $request->details,
         ]);
     
-        // Handle stock materials if applicable
         if ($request->type === 'material_stock' && $request->has('materials')) {
             foreach ($request->materials as $materialId => $materialData) {
                 if (isset($materialData['selected'])) {
-                    // Ensure quantity is provided for selected materials
                     if (empty($materialData['quantity'])) {
                         return redirect()->back()->withErrors([
                             'materials' => 'Quantity must be provided for selected materials.',
                         ])->withInput();
                     }
     
-                    // Attach the material with the specified quantity
                     $purchaseRequest->materials()->attach($materialId, [
                         'quantity' => $materialData['quantity']
                     ]);
@@ -104,21 +98,17 @@ public function approve($id)
         DB::transaction(function () use ($id) {
             $purchaseRequest = PurchaseRequest::with('materials')->findOrFail($id);
 
-            // Check if the request is for stock materials
             if ($purchaseRequest->type === 'material_stock') {
-                // Loop through materials and subtract quantity from stock
                 foreach ($purchaseRequest->materials as $material) {
                     $stockMaterial = DB::table('material_stock')
                         ->where('material_id', $material->id)
                         ->where('stock_id', $purchaseRequest->stock_id)
                         ->first();
 
-                    // Check if stock is available
                     if (!$stockMaterial || $stockMaterial->quantity < $material->pivot->quantity) {
                         throw new \Exception("Insufficient stock for material: {$material->name}");
                     }
 
-                    // Subtract the requested quantity from stock
                     DB::table('material_stock')
                         ->where('material_id', $material->id)
                         ->where('stock_id', $purchaseRequest->stock_id)
@@ -128,15 +118,12 @@ public function approve($id)
                 }
             }
 
-            // Change the request status to 'approved'
             $purchaseRequest->update(['status' => 'approved']);
         });
 
-        // Return success message
         return redirect()->back()->with('success', 'Purchase Request approved successfully.');
 
     } catch (\Exception $e) {
-        // Handle error and rollback
         return redirect()->back()->withErrors($e->getMessage());
     }
 }
@@ -146,7 +133,6 @@ public function decline($id)
 {
     $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-    // Change the request status to 'declined'
     $purchaseRequest->update(['status' => 'rejected']);
 
     return redirect()->back()->with('success', 'Purchase Request declined.');

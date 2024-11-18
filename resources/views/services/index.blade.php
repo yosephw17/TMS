@@ -108,7 +108,6 @@
         </div>
     </div>
 
-    <!-- Service Details Modal (for each service) -->
     @foreach ($services as $service)
         <div class="modal fade" id="serviceModal{{ $service->id }}" tabindex="-1"
             aria-labelledby="serviceModalLabel{{ $service->id }}" aria-hidden="true">
