@@ -23,7 +23,7 @@
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button"
                 data-bs-toggle="dropdown" aria-expanded="false"> <span class="ms-3 me-3"
-                    style="font-size: 1.1rem; color: #ffc107;">Hello, {{ auth()->user()->name }}</span>
+                    style="font-size: 1.1rem; color: #ffc107;">{{ auth()->user()->name }}</span>
 
                 <i class="fas fa-user fa-fw"></i></a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">

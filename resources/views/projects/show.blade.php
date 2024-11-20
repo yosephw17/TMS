@@ -62,7 +62,6 @@
                             <input type="text" name="location" class="form-control" required>
                         </div>
 
-                        <!-- Select Services and Categorized Service Details -->
                         <div class="form-group">
                             <label for="services">Select Service Details</label>
                             <div class="services">
@@ -87,7 +86,6 @@
                             </div>
                         </div>
 
-                        <!-- Select Teams -->
                         <div class="form-group">
                             <label for="teams">Select Teams</label>
                             <div id="teamSelect">
@@ -104,7 +102,6 @@
                             </div>
                         </div>
 
-                        <!-- Modal footer -->
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success">Save Project</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -123,7 +120,6 @@
             {{ $project->status === 'completed' ? 'bg-success' : ($project->status === 'cancelled' ? 'bg-danger' : ($project->status === 'pending' ? 'bg-warning' : 'bg-secondary')) }} 
             text-white d-flex justify-content-between align-items-center">
                 <h4>{{ $project->name }}</h4>
-                <!-- Edit Button -->
                 @can('project-edit')
                     <button class="btn btn-sm btn-light" data-bs-toggle="modal"
                         data-bs-target="#editProjectModal{{ $project->id }}">
@@ -132,7 +128,6 @@
                 @endcan
             </div>
 
-            <!-- Edit Project Modal -->
             <div class="modal fade" id="editProjectModal{{ $project->id }}" tabindex="-1"
                 aria-labelledby="editProjectModalLabel{{ $project->id }}" aria-hidden="true">
                 <div class="modal-dialog">
@@ -247,7 +242,6 @@
 
 
             <div class="card-body">
-                <!-- Tabs for Project Details -->
                 <ul class="nav nav-tabs" id="projectTab{{ $project->id }}" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="project-tab{{ $project->id }}" data-bs-toggle="tab"
@@ -283,14 +277,11 @@
                     </li>
                 </ul>
 
-                <!-- Tab Content -->
                 <div class="tab-content" id="projectTabContent{{ $project->id }}">
-                    <!-- Project Tab -->
                     <div class="tab-pane fade show active" id="project{{ $project->id }}" role="tabpanel"
                         aria-labelledby="project-tab{{ $project->id }}">
                         <div class="mt-3">
 
-                            <!-- Starting Date -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-calendar-alt"></i> Starting Date:
@@ -299,7 +290,6 @@
                                 </p>
                             </div>
 
-                            <!-- Ending Date (Ongoing if null) -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-calendar-check"></i> Ending Date:
@@ -309,7 +299,6 @@
                                 </p>
                             </div>
 
-                            <!-- Description -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-align-left"></i> Description:
@@ -317,7 +306,6 @@
                                 <p class="lead">{{ $project->description }}</p>
                             </div>
 
-                            <!-- Location -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-map-marker-alt"></i> Location:
@@ -325,8 +313,7 @@
                                 <p class="lead">{{ $project->location }}</p>
                             </div>
 
-                            <!-- Services (if any) -->
-                            <div class="mb-3">
+                            \ <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-concierge-bell"></i> Services Included:
                                 </strong>
@@ -344,7 +331,6 @@
                                 @endif
                             </div>
 
-                            <!-- Team (if any) -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-users"></i> Team:
@@ -362,7 +348,6 @@
                                 @endif
                             </div>
 
-                            <!-- Status -->
                             <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-tasks"></i> Status:

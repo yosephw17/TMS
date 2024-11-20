@@ -304,7 +304,7 @@ public function destroyAccessoriesProforma(Proforma $proforma)
         $proforma->materials()->detach();
         $proforma->delete();
 
-        return redirect()->route('projects.show', $proforma->project_id)
+        return redirect()->back()
                          ->with('success', 'Proforma deleted successfully.');
     }
 }
