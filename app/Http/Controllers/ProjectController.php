@@ -206,7 +206,7 @@ public function destroyMaterial(Project $project, Material $material)
 public function printMaterials(Project $project)
 {
     $project->load('materials'); 
-    $companyInfo=CompanyInfo::find(3);// Load materials relationship
+    $companyInfo=CompanyInfo::find(1);// Load materials relationship
     return view('print.materialsPrint', compact('project','companyInfo'));
 }
 
