@@ -196,19 +196,19 @@ class ProformaController extends Controller
     public function print($id)
 {
     $proforma = Proforma::with('customer', 'materials')->findOrFail($id);
-    $companyInfo = CompanyInfo::find(3);
+    $companyInfo = CompanyInfo::find(1);
     return view('print.aluminiumProfilePrint', compact('proforma','companyInfo'));
 }
     public function printAccessories($id)
 {
-    $companyInfo = CompanyInfo::find(3);
+    $companyInfo = CompanyInfo::find(1);
     $proforma = Proforma::with('customer', 'materials')->findOrFail($id);
     
     return view('print.aluminiumAccessoriesPrint', compact('proforma','companyInfo'));
 }
     public function printWork($id)
 {
-    $companyInfo = CompanyInfo::find(3);
+    $companyInfo = CompanyInfo::find(1);
     $proforma = Proforma::with('customer','works')->findOrFail($id);
     
     return view('print.workPrint', compact('proforma','companyInfo'));
