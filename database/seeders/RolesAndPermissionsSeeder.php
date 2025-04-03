@@ -24,7 +24,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'material-edit',
             'material-delete',
 
-            // Customer
+            // Customers
             'manage-customer',
             'customer-view',
             'customer-create',
