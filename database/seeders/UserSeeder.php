@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('12345678'), 
-            'phone' => '090909', 
+            'phone' => '09090909', 
             'address' => 'AA', 
         ]);
         $adminRole = Role::where('name', 'Admin')->first();
