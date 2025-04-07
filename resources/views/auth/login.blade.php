@@ -132,7 +132,7 @@
                     </div>
                 </form>
                 <div class="footer mt-4">
-                    &copy; 2024 TeamUp Management. All rights reserved.
+                    &copy; 2025 TeamUp Management. All rights reserved.
                 </div>
             </div>
         </div>
