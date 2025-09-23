@@ -10,13 +10,17 @@ use App\Models\Material;
 use App\Models\ProjectFile;
 use App\Models\Team;
 use App\Models\CompanyInfo;
+use App\Services\NotificationService;
 
 class ProjectController extends Controller
 {
-    public function __construct()
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
     {
         // Apply authentication middleware
         $this->middleware('auth');
+        $this->notificationService = $notificationService;
 
         $this->middleware('permission:manage-project', ['only' => ['index']]);
         $this->middleware('permission:project-view', ['only' => ['showProject']]);
@@ -26,15 +30,25 @@ class ProjectController extends Controller
         $this->middleware('permission:project-material-print', ['only' => ['printMaterials']]);
         $this->middleware('permission:project-upload-file', ['only' => ['uploadFiles']]);
     }
+
     public function index()
-{
-    $pendingProjects = Project::where('status', 'pending')->get();
-    $completedProjects = Project::where('status', 'completed')->get();
-    $canceledProjects = Project::where('status', 'cancelled')->get();
+    {
+        $user = auth()->user();
 
-    return view('projects.index', compact('pendingProjects', 'completedProjects', 'canceledProjects'));
-}
+        if ($user->can('project-view-all')) {
+            $projects = Project::all();
+        } else {
+            $projects = Project::whereHas('teams', function ($query) use ($user) {
+                $query->whereIn('teams.id', $user->teams->pluck('id'));
+            })->get();
+        }
 
+        $pendingProjects   = $projects->where('status', 'pending');
+        $completedProjects = $projects->where('status', 'completed');
+        $canceledProjects  = $projects->where('status', 'cancelled');
+
+        return view('projects.index', compact('pendingProjects', 'completedProjects', 'canceledProjects'));
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -44,66 +58,88 @@ class ProjectController extends Controller
         //
     }
 
-  
     public function store(Request $request)
-{
-    $validatedData = $request->validate([
-        'name' => 'required|string|max:255',
-        'starting_date' => 'required|date',
-        'ending_date' => 'required|date',
-        'description' => 'required|string',
-        'location' => 'required|string|max:255',
-        'customer_id' => 'required|exists:customers,id',
-        'service_detail_ids' => 'nullable|array',
-        'team_ids' => 'nullable|array',
-    ]);
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'starting_date' => 'required|date',
+            'ending_date' => 'required|date',
+            'description' => 'required|string',
+            'location' => 'required|string|max:255',
+            'customer_id' => 'required|exists:customers,id',
+            'service_detail_ids' => 'nullable|array',
+            'team_ids' => 'nullable|array',
+        ]);
 
-    $project = Project::create($validatedData);
+        $project = Project::create($validatedData);
 
-    if ($request->has('service_detail_ids')) {
-        $project->serviceDetails()->sync($request->service_detail_ids);
+        if ($request->has('service_detail_ids')) {
+            $project->serviceDetails()->sync($request->service_detail_ids);
+        }
+
+        if ($request->has('team_ids')) {
+            $project->teams()->sync($request->team_ids);
+        }
+
+        // Create notification for new project
+        $customer = Customer::find($validatedData['customer_id']);
+        $this->notificationService->create([
+            'type' => 'project_created',
+            'message' => "New project '{$project->name}' has been created for customer {$customer->name}",
+            'user_id' => auth()->id(),
+            'action_url' => route('projects.index'),
+            'data' => [
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->name,
+                'starting_date' => $project->starting_date,
+                'ending_date' => $project->ending_date
+            ]
+        ]);
+
+        return redirect()->back()->with('success', 'Project created successfully.');
     }
 
-    if ($request->has('team_ids')) {
-        $project->teams()->sync($request->team_ids);
-    }
-
-    return redirect()->back()->with('success', 'Project created successfully.');    }
-    
     public function show($customerId)
     {
         $customer = Customer::findOrFail($customerId);
-        $projects = Project::where('customer_id', $customerId)->get();
-        
-$services=Service::all();
-$materials=Material::all();
-$teams=Team::all();
+        $projects = Project::with(['proformaImages' => function ($query) {
+            $query->where('status', 'approved');
+        }])
+            ->where('customer_id', $customerId)
+            ->get();
+        $services = Service::all();
+        $materials = Material::all();
+        $teams = Team::all();
 
-        return view('projects.show', compact('customer', 'projects','services','materials','teams', 
-       ));
+        return view('projects.show', compact('customer', 'projects', 'services', 'materials', 'teams'));
     }
+
     public function showProject($projectId)
     {
         $project = Project::with(['proformaImages' => function ($query) {
             $query->where('status', 'approved');
         }])->findOrFail($projectId);
-                $customer = $project->customer;
+        $customer = $project->customer;
         $services = Service::all();
         $materials = Material::all();
         $profileProformas = $project->proformas()->where('type', 'aluminium_profile')->get();
         $accessoriesProformas = $project->proformas()->where('type', 'aluminium_accessories')->get();
         $workProformas = $project->proformas()->where('type', 'work')->get();
-    
-        $dailyActivities = $project->dailyActivities; 
+        $teams = Team::all();
+        $dailyActivities = $project->dailyActivities;
+
         return view('projects.view', compact(
-            'customer', 
-            'project', 
-            'services', 
-            'materials', 
-            'profileProformas', 
-            'accessoriesProformas', 
+            'customer',
+            'project',
+            'services',
+            'materials',
+            'profileProformas',
+            'accessoriesProformas',
             'workProformas',
-            'dailyActivities' 
+            'dailyActivities',
+            'teams'
         ));
     }
 
@@ -123,62 +159,59 @@ $teams=Team::all();
             'location' => 'nullable|string',
             'total_price' => 'nullable|numeric',
             'status' => 'nullable|string',
-            'service_detail_ids' => 'required|array', // Validating an array of service detail IDs
-            'service_detail_ids.*' => 'exists:service_details,id', // Each ID should exist in service_details table
+            'service_detail_ids' => 'required|array',
+            'service_detail_ids.*' => 'exists:service_details,id',
             'team_ids' => 'nullable|array',
 
         ]);
-    
-        // Update project details
+
         $project->update($request->except('service_detail_ids'));
-    
-        // Sync the selected services with the project
+
         $project->serviceDetails()->sync($request->service_detail_ids);
         if ($request->has('team_ids')) {
             $project->teams()->sync($request->team_ids);
         }
-    
-        return redirect()->back()->with('success', 'Project updated successfully.');}    
-            public function addMaterials(Request $request, Project $project)
-            {
-                $selectedMaterials = $request->input('materials', []); // Array of selected material IDs
-                $quantities = $request->input('quantities', []); // Array of quantities for each material ID
-            
-                // Custom validation to ensure quantity is provided for each selected material
-                $errors = [];
-                foreach ($selectedMaterials as $materialId) {
-                    if (empty($quantities[$materialId]) || $quantities[$materialId] <= 0) {
-                        // Retrieve the material name for a clear error message
-                        $materialName = Material::find($materialId)->name ?? 'Unknown Material';
-                        $errors["quantities.$materialId"] = "Quantity is required for the selected material: $materialName.";
-                    }
-                }
-            
-                if (!empty($errors)) {
-                    return redirect()->back()->withErrors($errors)->withInput();
-                }
-            
-                // Attach each selected material to the project with its quantity
-                foreach ($selectedMaterials as $materialId) {
-                    $quantity = $quantities[$materialId];
-                    $project->materials()->attach($materialId, ['quantity' => $quantity]);
-                }
-            
-                // Redirect to the project show page with a success message
-                return redirect()->back()->with('success', 'Materials added successfully.');            }
-        
 
-    
+        return redirect()->back()->with('success', 'Project updated successfully.');
+    }
+
+    public function addMaterials(Request $request, Project $project)
+    {
+        $selectedMaterials = $request->input('materials', []); // Array of selected material IDs
+        $quantities = $request->input('quantities', []); // Array of quantities for each material ID
+
+        $errors = [];
+        foreach ($selectedMaterials as $materialId) {
+            if (empty($quantities[$materialId]) || $quantities[$materialId] <= 0) {
+                $materialName = Material::find($materialId)->name ?? 'Unknown Material';
+                $errors["quantities.$materialId"] = "Quantity is required for the selected material: $materialName.";
+            }
+        }
+
+        if (!empty($errors)) {
+            return redirect()->back()->withErrors($errors)->withInput();
+        }
+
+        foreach ($selectedMaterials as $materialId) {
+            $quantity = $quantities[$materialId];
+            $project->materials()->attach($materialId, ['quantity' => $quantity]);
+        }
+
+        return redirect()->back()->with('success', 'Materials added successfully.');
+    }
+
     public function updateMaterial(Request $request, $projectId, $materialId)
-{
-    $project = Project::findOrFail($projectId);
+    {
+        $project = Project::findOrFail($projectId);
 
-    // Update the material quantity for the specific project
-    $project->materials()->updateExistingPivot($materialId, ['quantity' => $request->input('quantity')]);
-    $customerId = $project->customer->id;
+        // Update the material quantity for the specific project
+        $project->materials()->updateExistingPivot($materialId, ['quantity' => $request->input('quantity')]);
+        $customerId = $project->customer->id;
 
-    return redirect()->back()->with('success', 'Materials updated successfully.');}
-public function uploadFiles(Request $request, $projectId)
+        return redirect()->back()->with('success', 'Materials updated successfully.');
+    }
+
+    public function uploadFiles(Request $request, $projectId)
     {
         $project = Project::find($projectId);
 
@@ -197,18 +230,20 @@ public function uploadFiles(Request $request, $projectId)
 
         return redirect()->back()->with('success', 'Files uploaded successfully.');
     }
-public function destroyMaterial(Project $project, Material $material)
-{
-    $project->materials()->detach($material->id);
 
-    return redirect()->back()->with('success', 'Material deleted successfully.');
-}
-public function printMaterials(Project $project)
-{
-    $project->load('materials'); 
-    $companyInfo=CompanyInfo::find(1);// Load materials relationship
-    return view('print.materialsPrint', compact('project','companyInfo'));
-}
+    public function destroyMaterial(Project $project, Material $material)
+    {
+        $project->materials()->detach($material->id);
+
+        return redirect()->back()->with('success', 'Material deleted successfully.');
+    }
+
+    public function printMaterials(Project $project)
+    {
+        $project->load('materials'); // Load materials relationship
+        $companyInfo = CompanyInfo::find(1);
+        return view('print.materialsPrint', compact('project', 'companyInfo'));
+    }
 
     public function destroy(string $id)
     {

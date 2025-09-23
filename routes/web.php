@@ -22,7 +22,12 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\ProformaImageController;
+use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\ProformaWorkController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProjectAgreementController; // Added this line
+use Illuminate\Support\Facades\Artisan;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -34,6 +39,10 @@ use App\Http\Controllers\ProformaWorkController;
 |
 */
 
+Route::get('/run-migrations', function () {
+    Artisan::call('migrate', ["--force" => true]);
+    return "Migrations executed!";
+});
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -78,7 +87,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('settings', SettingController::class);
     Route::resource('purchase_requests', PurchaseRequestController::class);
     Route::post('/purchase_requests/{id}/approve', [PurchaseRequestController::class, 'approve'])->name('purchase_requests.approve');
-Route::post('/purchase_requests/{id}/decline', [PurchaseRequestController::class, 'decline'])->name('purchase_requests.decline');
+    Route::post('/purchase_requests/{id}/decline', [PurchaseRequestController::class, 'decline'])->name('purchase_requests.decline');
     Route::get('/api/stock/{stock}/materials', [StockController::class, 'getMaterials']);
     Route::resource('sellers', SellerController::class);
     Route::get('/proforma_images/{seller_id}', [ProformaImageController::class, 'index'])->name('proforma_images.index');
@@ -87,7 +96,26 @@ Route::post('/purchase_requests/{id}/decline', [PurchaseRequestController::class
     Route::post('proforma_images/{id}/decline', [ProformaImageController::class, 'decline'])->name('proforma_images.decline');
     Route::get('/projects/{project}/materials/print', [ProjectController::class, 'printMaterials'])->name('projects.materials.print');
     Route::resource('proforma_work', ProformaWorkController::class);
-    
+    Route::resource('frontends', FrontendController::class);
+    Route::get('frontnds/delete/{id}', [FrontendController::class, 'destroy'])->name('frontends.delete');
+
+    // Notification Routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'indexPage'])->name('notifications.index');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.delete');
+        Route::get('/notifications/{id}', [NotificationController::class, 'show'])->name('notifications.show');
+    });
+
+    // API Routes for AJAX calls
+    Route::middleware(['auth'])->prefix('api')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    });
 });
 
 require __DIR__.'/auth.php';

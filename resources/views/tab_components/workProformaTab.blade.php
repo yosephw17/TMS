@@ -4,11 +4,12 @@
       <div class="card mt-3">
 
           <div class="card-body">
-              <button class="btn btn-primary mb-3" data-bs-toggle="modal"
-                  data-bs-target="#addWorkProformaModal{{ $project->id }}">
-                  Add Proforma
-              </button>
-
+              @can('proforma-create')
+                  <button class="btn btn-primary mb-3" data-bs-toggle="modal"
+                      data-bs-target="#addWorkProformaModal{{ $project->id }}">
+                      Add Proforma
+                  </button>
+              @endcan
               @if ($workProformas->isEmpty())
                   <p>No Work Proformas available.</p>
               @else
@@ -241,7 +242,7 @@
                                                                           name="works[{{ $index }}][amount]"
                                                                           class="form-control"
                                                                           value="{{ old('works.' . $index . '.amount', $work->work_amount) }}"
-                                                                          placeholder="Enter amount" required>
+                                                                          placeholder="Enter amount">
                                                                   </div>
                                                                   <div class="form-group">
                                                                       <label for="work_quantity[]">Quantity</label>
@@ -355,7 +356,7 @@
                               <div class="form-group">
                                   <label for="work_amount[]">Amount</label>
                                   <input type="number" name="works[0][amount]" class="form-control"
-                                      placeholder="Enter amount" required>
+                                      placeholder="Enter amount">
                               </div>
                               <div class="form-group">
                                   <label for="work_quantity[]">Quantity</label>
@@ -406,7 +407,7 @@
             </div>
             <div class="form-group">
                 <label for="works[${index}][amount]">Amount</label>
-                <input type="number" name="works[${index}][amount]" class="form-control" placeholder="Enter amount" required>
+                <input type="number" name="works[${index}][amount]" class="form-control" placeholder="Enter amount" >
             </div>
             <div class="form-group">
                 <label for="works[${index}][quantity]">Quantity</label>

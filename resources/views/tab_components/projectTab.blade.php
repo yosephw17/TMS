@@ -41,7 +41,22 @@
                  <p class="text-muted">None</p>
              @endif
          </div>
-
+         <div class="mb-3">
+             <strong class="font-weight-bold mb-1">
+                 <i class="fas fa-users"></i> Team:
+             </strong>
+             @if ($project->teams->count() > 0)
+                 <ul class="list-group">
+                     @foreach ($project->teams as $team)
+                         <li class="list-group-item">
+                             {{ $team->name }}
+                         </li>
+                     @endforeach
+                 </ul>
+             @else
+                 <p class="text-muted">None</p>
+             @endif
+         </div>
          <div class="mb-3">
              <strong class="font-weight-bold mb-1">Status:</strong>
              <p class="lead">

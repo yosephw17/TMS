@@ -67,10 +67,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'proforma-work-decline',
             // project
             'manage-project',
+            
             'project-view',
+            'project-view-all',
             'project-create',
             'project-edit',
             'project-delete',
+
+            'project-material-create',
             'project-material-print',
             'project-material-edit',
             'project-material-delete',

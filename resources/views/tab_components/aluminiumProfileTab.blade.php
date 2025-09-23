@@ -1,7 +1,7 @@
 <div class="tab-pane fade show active" id="profileProforma{{ $project->id }}" role="tabpanel"
     aria-labelledby="profile-tab{{ $project->id }}">
     <h5>Aluminium Profile Proformas</h5>
-    @can('project-create')
+    @can('proforma-create')
         <button class="btn btn-primary mb-3" data-bs-toggle="modal"
             data-bs-target="#addProfileProformaModal{{ $project->id }}">
             Add Proforma

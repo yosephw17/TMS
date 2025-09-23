@@ -1,7 +1,7 @@
 <div class="tab-pane fade" id="quantity{{ $project->id }}" role="tabpanel"
     aria-labelledby="quantity-tab{{ $project->id }}">
     <div class="mt-3">
-        @can('material-create')
+        @can('project-material-create')
             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                 data-bs-target="#selectMaterialsModal{{ $project->id }}">
                 Add Materials
