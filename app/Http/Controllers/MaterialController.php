@@ -30,7 +30,6 @@ class MaterialController extends Controller
             'code' => 'nullable|string|max:255',
             'symbol' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',        
             'color' => 'nullable|string|max:255',
-            'unit_price' => 'required|numeric',
             'unit_of_measurement' => 'required|string|max:255',
             'type' => 'required|string|max:255',
         ]);
@@ -39,7 +38,6 @@ class MaterialController extends Controller
         $material->name = $request->name;
         $material->code = $request->code;
         $material->color = $request->color;
-        $material->unit_price = $request->unit_price;
         $material->unit_of_measurement = $request->unit_of_measurement;
         $material->type = $request->type;
         if ($request->hasFile('symbol')) {
@@ -62,7 +60,6 @@ class MaterialController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:255',
             'symbol' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate the symbol as an image
-            'unit_price' => 'required|numeric',
             'unit_of_measurement' => 'required|string|max:255',
             'type' => 'required|string|max:255',
             'color' => 'nullable|string|max:255', 
@@ -70,7 +67,6 @@ class MaterialController extends Controller
     
         $material->name = $request->name;
         $material->code = $request->code;
-        $material->unit_price = $request->unit_price;
         $material->unit_of_measurement = $request->unit_of_measurement;
         $material->type = $request->type;
         $material->color = $request->color;
