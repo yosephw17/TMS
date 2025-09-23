@@ -248,6 +248,11 @@
                         Daily Tasks
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="agreements-tab{{ $project->id }}" data-bs-toggle="tab"
+                            data-bs-target="#agreements{{ $project->id }}" type="button" role="tab"
+                            aria-controls="agreements{{ $project->id }}" aria-selected="false">Agreements</button>
+                    </li>
 
 
             </ul>
@@ -258,13 +263,13 @@
 
                 @include('tab_components/projectTab')
 
-                @include('tab_components.quantityTab')
+                @include('tab_components/quantityTab')
 
-                @include('tab_components.expenseTab')
+                @include('tab_components/expenseTab')
 
-                @include('tab_components.imageTab')
+                @include('tab_components/imageTab')
 
-                @include('tab_components.proformaTab')
+                @include('tab_components/proformaTab')
                 <div class="tab-pane fade" id="daily-tasks{{ $project->id }}" role="tabpanel"
                     aria-labelledby="daily-tasks-tab{{ $project->id }}">
                     <div>
@@ -300,15 +305,19 @@
                         @endif
                     </div>
                 </div>
+                @include('tab_components/agreementsTab')
+            </div>
+        </div>
+    </div>
 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        // Select all edit buttons within the accordion
-                        document.querySelectorAll('.edit-proforma-btn').forEach(function(button) {
-                            button.addEventListener('click', function(event) {
-                                event.stopPropagation(); // Prevent the accordion from closing
-                            });
-                        });
-                    });
-                </script>
-            @endsection
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Select all edit buttons within the accordion
+            document.querySelectorAll('.edit-proforma-btn').forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    event.stopPropagation(); // Prevent the accordion from closing
+                });
+            });
+        });
+    </script>
+@endsection

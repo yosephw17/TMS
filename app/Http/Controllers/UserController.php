@@ -19,7 +19,7 @@ class UserController extends Controller
         $this->middleware('permission:manage-user', ['only' => ['index']]);
         $this->middleware('permission:user-view', ['only' => ['show']]);
         $this->middleware('permission:user-create', ['only' => ['store']]);
-        $this->middleware('permission:user-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:user-update', ['only' => ['edit', 'update']]);
         $this->middleware('permission:user-delete', ['only' => ['destroy']]);
         $this->middleware('permission:user-assign-team', ['only' => ['addToTeam']]);
     }
@@ -52,7 +52,7 @@ class UserController extends Controller
     $this->validate($request, [
         'name' => 'required',
         'email' => 'required|email|unique:users,email',
-        'password' => 'required|same:confirm-password|min:4',
+    'password' => 'required|same:confirm-password|min:4',
         'roles' => 'required|array',
         'roles.*' => 'exists:roles,name',
         'phone' => 'required|string|max:15', 
@@ -95,20 +95,29 @@ class UserController extends Controller
             ->with('success', 'User updated successfully');
     }
 
-    public function addToTeam(Request $request, $userId)
-    {
-        $request->validate([
-            'team_ids' => 'required|array',  
-            'team_ids.*' => 'exists:teams,id' 
-        ]);
+public function addToTeam(Request $request, $userId)
+{
+    $request->validate([
+        'team_ids'   => 'nullable|array',  
+        'team_ids.*' => 'exists:teams,id'
+    ]);
 
-        $user = User::findOrFail($userId);
+    $user = User::findOrFail($userId);
+
+    if ($request->has('team_ids') && !empty($request->team_ids)) {
         $user->teams()->sync($request->team_ids);
-
-        return redirect()->route('users.index')->with('success', 'User added to teams successfully.');
+    } else {
+        $user->teams()->detach();
     }
+
+    return redirect()->route('users.index')->with('success', 'User teams updated successfully.');
+}
+
     public function destroy($id)
-    {
+    {  
+        
+        
+        
         User::find($id)->delete();
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully');

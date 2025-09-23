@@ -33,7 +33,7 @@ class ProformaWorkController extends Controller
             'works' => 'required|array',
             'works.*.name' => 'required|string|max:255',
             'works.*.unit' => 'required|string|max:50',
-            'works.*.amount' => 'required|numeric|min:0',
+            'works.*.amount' => 'nullable|numeric|min:0',
             'works.*.quantity' => 'required|numeric|min:1',
             'works.*.total' => 'required|numeric|min:0',
         ]);

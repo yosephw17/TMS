@@ -7,13 +7,18 @@ use App\Models\PurchaseRequest;
 use App\Models\Project;
 use App\Models\Material;
 use App\Models\Stock;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
+
 class PurchaseRequestController extends Controller
 {
-    public function __construct()
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
     {
         // Apply authentication middleware
         $this->middleware('auth');
+        $this->notificationService = $notificationService;
 
         $this->middleware('permission:manage-purchase-request', ['only' => ['index']]);
         $this->middleware('permission:purchase-request-view', ['only' => ['show']]);
@@ -23,19 +28,23 @@ class PurchaseRequestController extends Controller
         $this->middleware('permission:purchase-request-approve', ['only' => ['approve']]);
         $this->middleware('permission:purchase-request-decline', ['only' => ['decline']]);
     }
+
     public function index()
     {
         $user = auth()->user();
-        $materials=Material::all();
-        $projects=Project::where('status', 'pending')->get();
-        $stocks=Stock::all();
+        $materials = Material::all();
+        $projects = Project::where('status', 'pending')->get();
+        $stocks = Stock::all();
+        
         if ($user->hasRole('Admin')) {
-        $purchaseRequests = PurchaseRequest::with('project', 'materials')->get();
-    } else {
-        $purchaseRequests = PurchaseRequest::where('user_id', $user->id)->get();
-    }   
+            $purchaseRequests = PurchaseRequest::with('project', 'materials')->get();
+        } else {
+            $purchaseRequests = PurchaseRequest::where('user_id', $user->id)->get();
+        }   
+        
         return view('purchase_requests.index', compact('purchaseRequests','projects','stocks','materials'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -43,12 +52,12 @@ class PurchaseRequestController extends Controller
             'type' => 'required|string|in:material_stock,material_non_stock,labour,transport',
             'stock_id' => 'nullable|exists:stocks,id',
             'materials' => 'nullable|array',
-            'materials.*.quantity' => 'nullable|integer|min:1', // Quantity for stock materials must be integer
+            'materials.*.quantity' => 'nullable|integer|min:1',
             'non_stock_name' => 'nullable|required_if:type,material_non_stock|string|max:255',
-            'non_stock_price' => 'nullable|required_if:type,material_non_stock|numeric|min:0', // Non-stock price must be numeric
-            'labour_transport_price' => 'nullable|required_if:type,labour,transport|numeric|min:0', // Price for labour/transport
-            'non_stock_quantity' => 'nullable|required_if:type,material_non_stock|integer|min:1', // Non-stock quantity must be integer
-            'details' => 'nullable|required_if:type,labour,transport|string|max:1000', // Details for labour/transport must be string
+            'non_stock_price' => 'nullable|required_if:type,material_non_stock|numeric|min:0',
+            'labour_transport_price' => 'nullable|required_if:type,labour,transport|numeric|min:0',
+            'non_stock_quantity' => 'nullable|required_if:type,material_non_stock|integer|min:1',
+            'details' => 'nullable|required_if:type,labour,transport|string|max:1000',
         ]);
     
         $price = null;
@@ -80,62 +89,123 @@ class PurchaseRequestController extends Controller
                             'materials' => 'Quantity must be provided for selected materials.',
                         ])->withInput();
                     }
-    
+                    
                     $purchaseRequest->materials()->attach($materialId, [
                         'quantity' => $materialData['quantity']
                     ]);
                 }
             }
         }
+
+        // Create notification for new purchase request
+        $project = Project::find($request->project_id);
+        $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
+        
+        $this->notificationService->create([
+            'type' => 'purchase_request_created',
+            'message' => "New purchase request for '{$itemName}' requires approval (Project: {$project->name})",
+            'user_id' => auth()->id(),
+            'action_url' => route('purchase_requests.index'),
+            'data' => [
+                'purchase_request_id' => $purchaseRequest->id,
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'item_name' => $itemName,
+                'type' => $request->type,
+                'price' => $price
+            ]
+        ]);
     
-        return redirect()->route('purchase_requests.index')->with('success', 'Purchase request submitted successfully.');
+        return redirect()->route('purchase_requests.index')->with('success', 'Purchase request created successfully.');
     }
-    
-    
-public function approve($id)
-{
-    try {
-        DB::transaction(function () use ($id) {
-            $purchaseRequest = PurchaseRequest::with('materials')->findOrFail($id);
 
-            if ($purchaseRequest->type === 'material_stock') {
-                foreach ($purchaseRequest->materials as $material) {
-                    $stockMaterial = DB::table('material_stock')
-                        ->where('material_id', $material->id)
-                        ->where('stock_id', $purchaseRequest->stock_id)
-                        ->first();
+    public function approve($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $purchaseRequest = PurchaseRequest::with('materials')->findOrFail($id);
 
-                    if (!$stockMaterial || $stockMaterial->quantity < $material->pivot->quantity) {
-                        throw new \Exception("Insufficient stock for material: {$material->name}");
+                if ($purchaseRequest->type === 'material_stock') {
+                    foreach ($purchaseRequest->materials as $material) {
+                        $stockMaterial = DB::table('material_stock')
+                            ->where('material_id', $material->id)
+                            ->where('stock_id', $purchaseRequest->stock_id)
+                            ->first();
+
+                        if (!$stockMaterial || $stockMaterial->quantity < $material->pivot->quantity) {
+                            throw new \Exception("Insufficient stock for material: {$material->name}");
+                        }
+
+                        DB::table('material_stock')
+                            ->where('material_id', $material->id)
+                            ->where('stock_id', $purchaseRequest->stock_id)
+                            ->update([
+                                'quantity' => $stockMaterial->quantity - $material->pivot->quantity,
+                            ]);
                     }
-
-                    DB::table('material_stock')
-                        ->where('material_id', $material->id)
-                        ->where('stock_id', $purchaseRequest->stock_id)
-                        ->update([
-                            'quantity' => $stockMaterial->quantity - $material->pivot->quantity,
-                        ]);
                 }
-            }
 
-            $purchaseRequest->update(['status' => 'approved']);
-        });
+                $purchaseRequest->update(['status' => 'approved']);
 
-        return redirect()->back()->with('success', 'Purchase Request approved successfully.');
+                // Create notification for approval
+                $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
+                
+                $this->notificationService->create([
+                    'type' => 'purchase_request_approved',
+                    'message' => "Purchase request for '{$itemName}' has been approved",
+                    'user_id' => $purchaseRequest->user_id,
+                    'action_url' => route('purchase_requests.index'),
+                    'data' => [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'item_name' => $itemName,
+                        'approved_by' => auth()->user()->name
+                    ]
+                ]);
+            });
 
-    } catch (\Exception $e) {
-        return redirect()->back()->withErrors($e->getMessage());
+            return redirect()->back()->with('success', 'Purchase Request approved successfully.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
+        }
     }
-}
 
+    public function decline($id)
+    {
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        $purchaseRequest->update(['status' => 'declined']);
 
-public function decline($id)
-{
-    $purchaseRequest = PurchaseRequest::findOrFail($id);
+        // Create notification for decline
+        $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
+        
+        $this->notificationService->create([
+            'type' => 'purchase_request_rejected',
+            'message' => "Purchase request for '{$itemName}' has been declined",
+            'user_id' => $purchaseRequest->user_id,
+            'action_url' => route('purchase_requests.index'),
+            'data' => [
+                'purchase_request_id' => $purchaseRequest->id,
+                'item_name' => $itemName,
+                'declined_by' => auth()->user()->name
+            ]
+        ]);
 
-    $purchaseRequest->update(['status' => 'rejected']);
+        return redirect()->back()->with('success', 'Purchase request declined.');
+    }
 
-    return redirect()->back()->with('success', 'Purchase Request declined.');
-}
-
+    private function getPurchaseRequestItemName($purchaseRequest)
+    {
+        switch ($purchaseRequest->type) {
+            case 'material_non_stock':
+                return $purchaseRequest->non_stock_name;
+            case 'labour':
+                return 'Labour Services';
+            case 'transport':
+                return 'Transport Services';
+            case 'material_stock':
+                return 'Stock Materials';
+            default:
+                return 'Purchase Item';
+        }
+    }
 }

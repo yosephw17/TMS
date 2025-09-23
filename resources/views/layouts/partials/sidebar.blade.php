@@ -9,6 +9,18 @@
                 Dashboard
             </a>
 
+            <!-- Notifications -->
+            <a class="nav-link {{ request()->routeIs('notifications.index') ? 'active' : '' }}" href="{{ route('notifications.index') }}">
+                <div class="sb-nav-link-icon position-relative">
+                    <i class="fas fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger sidebar-notification-badge" 
+                          id="sidebarNotificationBadge" style="display: none; font-size: 0.6rem; min-width: 16px; height: 16px;">
+                        0
+                    </span>
+                </div>
+                Notifications
+            </a>
+
 
             <div class="sb-sidenav-menu-heading">Management</div>
 
@@ -81,6 +93,13 @@
                     Services
                 </a>
             @endcan
+            <!-- @can('manage-service')
+                <a class="nav-link {{ request()->routeIs('frontends.index', 'frontends.show') ? 'active' : '' }}"
+                    href="{{ route('frontends.index') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-concierge-bell"></i></div>
+                    Front end
+                </a>
+            @endcan -->
 
 
 

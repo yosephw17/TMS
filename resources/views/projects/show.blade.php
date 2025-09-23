@@ -275,6 +275,11 @@
                             data-bs-target="#tasks{{ $project->id }}" type="button" role="tab"
                             aria-controls="tasks{{ $project->id }}" aria-selected="false">Daily Tasks</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="agreements-tab{{ $project->id }}" data-bs-toggle="tab"
+                            data-bs-target="#agreements{{ $project->id }}" type="button" role="tab"
+                            aria-controls="agreements{{ $project->id }}" aria-selected="false">Agreements</button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="projectTabContent{{ $project->id }}">
@@ -313,7 +318,7 @@
                                 <p class="lead">{{ $project->location }}</p>
                             </div>
 
-                            \ <div class="mb-3">
+                            <div class="mb-3">
                                 <strong class="font-weight-bold mb-1">
                                     <i class="fas fa-concierge-bell"></i> Services Included:
                                 </strong>
@@ -650,6 +655,7 @@
                             @endforeach
                         </ul>
                     </div>
+                    @include('tab_components/agreementsTab')
                 </div>
             </div>
         </div>
