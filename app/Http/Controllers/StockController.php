@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use App\Models\Material;
-use App\Models\MaterialStockEntry;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,9 +12,7 @@ class StockController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
         $this->middleware('auth');
-
         $this->middleware('permission:manage-stock', ['only' => ['index']]);
         $this->middleware('permission:stock-view', ['only' => ['show']]);
         $this->middleware('permission:stock-create', ['only' => ['store']]);
@@ -39,7 +36,6 @@ class StockController extends Controller
         ]);
 
         Stock::create($request->only('name', 'location'));
-
         return redirect()->route('stocks.index')->with('success', 'Stock created successfully.');
     }
 
@@ -73,20 +69,24 @@ class StockController extends Controller
         }
     
         $stock = Stock::findOrFail($id);
+        
+        // Generate ONE reference number for the entire batch
+        $batchReferenceNumber = $this->generateBatchReferenceNumber($stock->id);
     
         foreach ($selectedMaterials as $materialId) {
             $quantity = $request->input("quantities.$materialId");
             $unitPrice = $request->input("unit_prices.$materialId");
-            $totalPrice = $quantity * $unitPrice;
             $notes = $request->input("notes.$materialId");
             $supplier = $request->input("suppliers.$materialId");
             $batchNumber = $request->input("batch_numbers.$materialId");
             $expiryDate = $request->input("expiry_dates.$materialId");
             
-            // Generate reference number
-            $referenceNumber = $this->generateReferenceNumber($stock->id, $materialId);
+            // Calculate prices
+            $totalPrice = $quantity * $unitPrice;
             
-            // Add to material_stock pivot table with full tracking
+            // Use the SAME reference number for all materials in this batch
+            $referenceNumber = $batchReferenceNumber;
+            
             $stock->materials()->attach($materialId, [
                 'quantity' => $quantity,
                 'original_quantity' => $quantity,
@@ -111,67 +111,68 @@ class StockController extends Controller
                         'total_price' => $totalPrice,
                         'timestamp' => now(),
                         'user' => auth()->user()->name,
-                        'notes' => 'Initial stock entry'
+                        'notes' => 'Initial stock entry - Batch: ' . $referenceNumber
                     ]
                 ])
             ]);
         }
     
-        return redirect()->route('stocks.show', $id)->with('success', 'Materials added with reference numbers successfully.');
+        return redirect()->route('stocks.show', $id)->with('success', 'Materials added with batch reference: ' . $batchReferenceNumber);
     }
 
-    /**
-     * Generate reference number following project pattern
-     */
-    private function generateReferenceNumber($stockId, $materialId)
+    private function generateBatchReferenceNumber($stockId)
     {
         $stock = Stock::find($stockId);
-        $material = Material::find($materialId);
-        
-        // Get first 3 characters of stock name and material name
         $stockCode = strtoupper(substr($stock->name, 0, 3));
-        $materialCode = strtoupper(substr($material->name, 0, 3));
-        
-        // Get today's date
         $date = Carbon::now()->format('Ymd');
         
-        // Get sequence number for today
-        $todayEntries = DB::table('material_stock')
+        $todayBatches = DB::table('material_stock')
             ->where('stock_id', $stockId)
-            ->where('material_id', $materialId)
             ->whereDate('created_at', Carbon::today())
             ->whereNotNull('reference_number')
-            ->count();
+            ->distinct('reference_number')
+            ->count('reference_number');
         
-        $sequence = str_pad($todayEntries + 1, 3, '0', STR_PAD_LEFT);
-        
-        return "{$stockCode}-{$materialCode}-{$date}-{$sequence}";
+        $sequence = str_pad($todayBatches + 1, 3, '0', STR_PAD_LEFT);
+        return "{$stockCode}-BATCH-{$date}-{$sequence}";
     }
 
     /**
-     * Get average price for materials in purchase requests
+     * Get materials for a specific stock (API endpoint for purchase requests)
      */
-    public function getAveragePrice($stockId, $materialId)
+     /**
+     * Get materials for a specific stock (API endpoint for purchase requests)
+     */
+    public function getMaterials(Stock $stock)
     {
-        $entries = DB::table('material_stock')
-            ->where('stock_id', $stockId)
-            ->where('material_id', $materialId)
-            ->where('quantity', '>', 0)
-            ->whereNotNull('unit_price')
+        $materials = $stock->materials()
+            ->withPivot([
+                'quantity', 'remaining_quantity', 'reference_number', 
+                'batch_number', 'supplier', 'status'
+            ])
+            ->where('material_stock.remaining_quantity', '>', 0)
+            ->where('material_stock.status', 'active')
             ->get();
 
-        if ($entries->isEmpty()) {
-            $material = Material::find($materialId);
-            return $material ? $material->unit_price : 0;
-        }
+        // Group materials by ID and sum their remaining quantities
+        $groupedMaterials = $materials->groupBy('id')->map(function ($materialGroup) {
+            $material = $materialGroup->first(); // Get the base material info
+            
+            // Sum all remaining quantities across all reference numbers
+            $totalRemainingQuantity = $materialGroup->sum('pivot.remaining_quantity');
+            
+            // Create a new pivot object with the summed quantity
+            $material->pivot = (object) [
+                'quantity' => $totalRemainingQuantity,
+                'remaining_quantity' => $totalRemainingQuantity,
+                'reference_count' => $materialGroup->count(),
+                'reference_numbers' => $materialGroup->pluck('pivot.reference_number')->unique()->values()->toArray()
+            ];
+            
+            return $material;
+        })->values(); // Reset array keys
 
-        $totalValue = $entries->sum(function ($entry) {
-            return $entry->unit_price * $entry->quantity;
-        });
-        
-        $totalQuantity = $entries->sum('quantity');
-        
-        return $totalQuantity > 0 ? $totalValue / $totalQuantity : 0;
+        return response()->json($groupedMaterials);
     }
 
     public function removeMaterial(Request $request, $stockId, $materialId)
@@ -181,9 +182,8 @@ class StockController extends Controller
         ]);
 
         $stock = Stock::findOrFail($stockId);
-
         $existingMaterial = $stock->materials()->where('material_id', $materialId)->firstOrFail();
-        $existingQuantity = $existingMaterial->pivot->quantity;
+        $existingQuantity = $existingMaterial->pivot->remaining_quantity;
 
         $quantityToRemove = $request->input('quantity');
         $newQuantity = $existingQuantity - $quantityToRemove;
@@ -191,7 +191,9 @@ class StockController extends Controller
         if ($newQuantity <= 0) {
             $stock->materials()->detach($materialId);
         } else {
-            $stock->materials()->updateExistingPivot($materialId, ['quantity' => $newQuantity]);
+            $stock->materials()->updateExistingPivot($materialId, [
+                'remaining_quantity' => $newQuantity
+            ]);
         }
 
         return redirect()->route('stocks.show', $stockId)->with('success', 'Material quantity updated successfully.');
@@ -215,13 +217,6 @@ class StockController extends Controller
         ]);
 
         return redirect()->route('stocks.index')->with('success', 'Stock updated successfully');
-    }
-
-    public function getMaterials(Stock $stock)
-    {
-        $materials = $stock->materials()->withPivot('quantity')->get();
-
-        return response()->json($materials);
     }
 
     public function destroy($id)
@@ -261,10 +256,7 @@ class StockController extends Controller
         }
 
         $newRemainingQuantity = $materialEntry->remaining_quantity - $quantityUsed;
-        $usedValue = ($materialEntry->unit_price * $quantityUsed);
-        $newCurrentValue = $materialEntry->current_total_value - $usedValue;
         $newTotalUsed = $materialEntry->total_used + $quantityUsed;
-        $newTotalUsedValue = $materialEntry->total_used_value + $usedValue;
 
         // Update movement log
         $movementLog = json_decode($materialEntry->movement_log, true) ?? [];
@@ -272,8 +264,6 @@ class StockController extends Controller
             'type' => 'outgoing',
             'quantity' => $quantityUsed,
             'remaining_after' => $newRemainingQuantity,
-            'unit_price' => $materialEntry->unit_price,
-            'value_used' => $usedValue,
             'reason' => $request->reason,
             'project_id' => $request->project_id,
             'timestamp' => now(),
@@ -288,9 +278,7 @@ class StockController extends Controller
             ->where('id', $pivotId)
             ->update([
                 'remaining_quantity' => $newRemainingQuantity,
-                'current_total_value' => $newCurrentValue,
                 'total_used' => $newTotalUsed,
-                'total_used_value' => $newTotalUsedValue,
                 'status' => $status,
                 'last_movement_at' => now(),
                 'movement_log' => json_encode($movementLog)
@@ -308,22 +296,12 @@ class StockController extends Controller
         $referenceNumber = $request->get('reference');
         $stock = Stock::findOrFail($stockId);
         
-        // Get ALL materials with the same reference number
         $materials = DB::table('material_stock')
             ->join('materials', 'material_stock.material_id', '=', 'materials.id')
             ->where('material_stock.stock_id', $stockId)
             ->where('material_stock.reference_number', $referenceNumber)
             ->select(
-                'material_stock.id as pivot_id',
-                'material_stock.quantity',
-                'material_stock.unit_price', 
-                'material_stock.total_price',
-                'material_stock.reference_number',
-                'material_stock.batch_number',
-                'material_stock.supplier',
-                'material_stock.notes',
-                'material_stock.created_at',
-                'materials.id as material_id',
+                'material_stock.*',
                 'materials.name', 
                 'materials.unit_of_measurement', 
                 'materials.color',

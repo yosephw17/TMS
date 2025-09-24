@@ -25,7 +25,6 @@
                         <th>Name</th>
                         <th>Code</th>
                         <th>Symbol</th>
-                        <th>Unit Price</th>
                         <th>Unit of Measurement</th>
                         <th>Color</th>
                         <th width="200px">Action</th>
@@ -44,7 +43,6 @@
                                 @endif
                             </td>
 
-                            <td>{{ $material->unit_price }}</td>
                             <td>{{ $material->unit_of_measurement }}</td>
                             <td>{{ $material->color }}</td>
                             <td>
@@ -87,7 +85,6 @@
                                         <p><strong>Symbol:</strong> <img src="{{ asset('storage/' . $material->symbol) }}"
                                                 alt="Symbol" width="50">
                                         </p>
-                                        <p><strong>Unit Price:</strong> {{ $material->unit_price }}</p>
                                         <p><strong>Unit of Measurement:</strong> {{ $material->unit_of_measurement }}</p>
                                         <p><strong>Type:</strong> {{ $material->type }}</p>
                                         <p><strong>Color:</strong> <span
@@ -139,11 +136,7 @@
                                                 @endif
                                             </div>
 
-                                            <div class="form-group">
-                                                <strong>Unit Price:</strong>
-                                                <input type="text" name="unit_price" value="{{ $material->unit_price }}"
-                                                    class="form-control" required>
-                                            </div>
+         
 
                                             <div class="form-group">
                                                 <strong>Unit of Measurement:</strong>
@@ -262,13 +255,6 @@
                                 <option value="bar">Bar (bar)</option>
                                 <!-- Add more units as needed -->
                             </select>
-                        </div>
-
-                        <!-- Unit Price -->
-                        <div class="form-group mt-3">
-                            <strong>Unit Price:</strong>
-                            <input type="text" name="unit_price" placeholder="Unit Price" class="form-control"
-                                required>
                         </div>
 
                         <!-- Color (Dropdown with White and Black on Top) -->
