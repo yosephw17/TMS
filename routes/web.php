@@ -70,6 +70,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('stocks', StockController::class);
     Route::post('stocks/{stock}/add-material', [StockController::class, 'addMaterial'])->name('stocks.addMaterial');
     Route::post('stocks/{stock}/remove-material/{material}', [StockController::class, 'removeMaterial'])->name('stocks.removeMaterial');
+    Route::post('stocks/{stock}/use-material/{material}/{pivot}', [StockController::class, 'updateMaterialQuantity'])->name('stocks.useMaterial');
+    Route::get('stocks/{stock}/print-reference', [StockController::class, 'printByReference'])->name('stocks.printReference');
+    Route::get('stocks/{stock}/print-all', [StockController::class, 'printStock'])->name('stocks.printAll');
+    Route::get('stocks/{stock}/print-active', [StockController::class, 'printActiveStock'])->name('stocks.printActive');
+    Route::get('stocks/{stock}/materials', [StockController::class, 'getMaterials'])->name('stocks.getMaterials');
     Route::get('projects/show/{customer}', [ProjectController::class, 'show'])->name('projects.show');
     Route::get('projects/view/{project}', [ProjectController::class, 'showProject'])->name('projects.view');
     Route::resource('projects', ProjectController::class);
