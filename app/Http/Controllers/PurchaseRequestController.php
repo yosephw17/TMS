@@ -8,17 +8,20 @@ use App\Models\Project;
 use App\Models\Material;
 use App\Models\Stock;
 use App\Services\NotificationService;
+use App\Services\ProjectCostService;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseRequestController extends Controller
 {
     protected $notificationService;
+    protected $projectCostService;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, ProjectCostService $projectCostService)
     {
         // Apply authentication middleware
         $this->middleware('auth');
         $this->notificationService = $notificationService;
+        $this->projectCostService = $projectCostService;
 
         $this->middleware('permission:manage-purchase-request', ['only' => ['index']]);
         $this->middleware('permission:purchase-request-view', ['only' => ['show']]);
@@ -122,26 +125,14 @@ class PurchaseRequestController extends Controller
     public function approve($id)
     {
         try {
-            DB::transaction(function () use ($id) {
+            $purchaseRequest = null;
+            
+            DB::transaction(function () use ($id, &$purchaseRequest) {
                 $purchaseRequest = PurchaseRequest::with('materials')->findOrFail($id);
 
                 if ($purchaseRequest->type === 'material_stock') {
                     foreach ($purchaseRequest->materials as $material) {
-                        $stockMaterial = DB::table('material_stock')
-                            ->where('material_id', $material->id)
-                            ->where('stock_id', $purchaseRequest->stock_id)
-                            ->first();
-
-                        if (!$stockMaterial || $stockMaterial->quantity < $material->pivot->quantity) {
-                            throw new \Exception("Insufficient stock for material: {$material->name}");
-                        }
-
-                        DB::table('material_stock')
-                            ->where('material_id', $material->id)
-                            ->where('stock_id', $purchaseRequest->stock_id)
-                            ->update([
-                                'quantity' => $stockMaterial->quantity - $material->pivot->quantity,
-                            ]);
+                        $this->processFIFODeduction($purchaseRequest, $material);
                     }
                 }
 
@@ -162,6 +153,11 @@ class PurchaseRequestController extends Controller
                     ]
                 ]);
             });
+
+            // Update project costs after successful approval
+            if ($purchaseRequest) {
+                $this->projectCostService->updateProjectCostsOnApproval($purchaseRequest);
+            }
 
             return redirect()->back()->with('success', 'Purchase Request approved successfully.');
 
@@ -191,6 +187,80 @@ class PurchaseRequestController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Purchase request declined.');
+    }
+
+    /**
+     * Process FIFO stock deduction for a material in purchase request
+     */
+    private function processFIFODeduction($purchaseRequest, $material)
+    {
+        $requiredQuantity = $material->pivot->quantity;
+        
+        // Get FIFO entries for this material
+        $fifoResult = $material->getFIFOEntries($purchaseRequest->stock_id, $requiredQuantity);
+        
+        if (!$fifoResult['can_fulfill']) {
+            throw new \Exception("Insufficient stock for material: {$material->name}. Required: {$requiredQuantity}");
+        }
+
+        // Process FIFO deductions
+        foreach ($fifoResult['entries'] as $fifoEntry) {
+            $this->updateStockEntry($fifoEntry, $purchaseRequest);
+        }
+        
+        // Store the total cost for this material in the purchase request
+        $purchaseRequest->materials()->updateExistingPivot($material->id, [
+            'total_cost' => $fifoResult['total_cost'],
+            'weighted_avg_price' => $material->getWeightedAveragePrice($purchaseRequest->stock_id)
+        ]);
+    }
+
+    /**
+     * Update individual stock entry with FIFO deduction
+     */
+    private function updateStockEntry($fifoEntry, $purchaseRequest)
+    {
+        $entry = $fifoEntry['entry'];
+        $quantityToDeduct = $fifoEntry['quantity_to_deduct'];
+        $unitPrice = $fifoEntry['unit_price'];
+        $totalCost = $fifoEntry['total_cost'];
+        
+        $currentRemaining = $entry->pivot->remaining_quantity;
+        $newRemaining = $currentRemaining - $quantityToDeduct;
+        $newTotalUsed = $entry->pivot->total_used + $quantityToDeduct;
+        $newTotalUsedValue = $entry->pivot->total_used_value + $totalCost;
+        
+        // Update movement log
+        $movementLog = json_decode($entry->pivot->movement_log, true) ?? [];
+        $movementLog[] = [
+            'type' => 'purchase_request_deduction',
+            'quantity' => $quantityToDeduct,
+            'unit_price' => $unitPrice,
+            'total_cost' => $totalCost,
+            'remaining_after' => $newRemaining,
+            'purchase_request_id' => $purchaseRequest->id,
+            'project_id' => $purchaseRequest->project_id,
+            'timestamp' => now(),
+            'user' => auth()->user()->name,
+            'notes' => "FIFO deduction for purchase request #{$purchaseRequest->id}"
+        ];
+
+        // Determine new status and current total value
+        $status = $newRemaining <= 0 ? 'depleted' : 'active';
+        $newCurrentTotalValue = $newRemaining * $unitPrice;
+
+        // Update the material stock entry
+        DB::table('material_stock')
+            ->where('id', $entry->pivot->id)
+            ->update([
+                'remaining_quantity' => $newRemaining,
+                'total_used' => $newTotalUsed,
+                'total_used_value' => $newTotalUsedValue,
+                'current_total_value' => $newCurrentTotalValue,
+                'status' => $status,
+                'last_movement_at' => now(),
+                'movement_log' => json_encode($movementLog)
+            ]);
     }
 
     private function getPurchaseRequestItemName($purchaseRequest)

@@ -27,7 +27,7 @@ use App\Http\Controllers\ProformaWorkController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectAgreementController; // Added this line
 use Illuminate\Support\Facades\Artisan;
-
+use App\Http\Controllers\RestockController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -103,7 +103,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('proforma_work', ProformaWorkController::class);
     Route::resource('frontends', FrontendController::class);
     Route::get('frontnds/delete/{id}', [FrontendController::class, 'destroy'])->name('frontends.delete');
-
+// Restock Routes
+Route::prefix('restock')->group(function () {
+    Route::get('/', [RestockController::class, 'index'])->name('restock.index');
+    Route::post('/', [RestockController::class, 'store'])->name('restock.store');
+    Route::get('/{restockEntry}', [RestockController::class, 'show'])->name('restock.show');
+    Route::post('/{restockEntry}/approve', [RestockController::class, 'approve'])->name('restock.approve');
+    Route::post('/{restockEntry}/reject', [RestockController::class, 'reject'])->name('restock.reject');
+    Route::get('/materials/{purchaseRequest}', [RestockController::class, 'getMaterialsForPurchaseRequest'])->name('restock.materials');
+    Route::get('/analytics', [RestockController::class, 'getAnalytics'])->name('restock.analytics');
+});
     // Notification Routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/notifications', [NotificationController::class, 'indexPage'])->name('notifications.index');
