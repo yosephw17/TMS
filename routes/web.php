@@ -86,6 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/{project}/upload-files', [ProjectController::class, 'uploadFiles'])->name('projects.uploadFiles');
     Route::resource('daily_activities', DailyActivityController::class);
     Route::resource('proformas', ProformaController::class);
+    Route::patch('/proformas/{id}/approve', [ProformaController::class, 'approve'])->name('proformas.approve');
+    Route::patch('/proformas/{id}/decline', [ProformaController::class, 'reject'])->name('proformas.decline');
     Route::get('/aluminiumProfile/print/{id}', [ProformaController::class, 'print'])->name('print.aluminiumProfile');
     Route::get('/aluminiumAccessories/print/{id}', [ProformaController::class, 'printAccessories'])->name('print.accessories');
     Route::get('/work/print/{id}', [ProformaController::class, 'printWork'])->name('print.work');
@@ -103,16 +105,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('proforma_work', ProformaWorkController::class);
     Route::resource('frontends', FrontendController::class);
     Route::get('frontnds/delete/{id}', [FrontendController::class, 'destroy'])->name('frontends.delete');
-// Restock Routes
-Route::prefix('restock')->group(function () {
-    Route::get('/', [RestockController::class, 'index'])->name('restock.index');
-    Route::post('/', [RestockController::class, 'store'])->name('restock.store');
-    Route::get('/{restockEntry}', [RestockController::class, 'show'])->name('restock.show');
-    Route::post('/{restockEntry}/approve', [RestockController::class, 'approve'])->name('restock.approve');
-    Route::post('/{restockEntry}/reject', [RestockController::class, 'reject'])->name('restock.reject');
-    Route::get('/materials/{purchaseRequest}', [RestockController::class, 'getMaterialsForPurchaseRequest'])->name('restock.materials');
-    Route::get('/analytics', [RestockController::class, 'getAnalytics'])->name('restock.analytics');
-});
+    // Restock Routes
+    Route::prefix('restock')->group(function () {
+        Route::get('/', [RestockController::class, 'index'])->name('restock.index');
+        Route::post('/', [RestockController::class, 'store'])->name('restock.store');
+        Route::get('/{restockEntry}', [RestockController::class, 'show'])->name('restock.show');
+        Route::post('/{restockEntry}/approve', [RestockController::class, 'approve'])->name('restock.approve');
+        Route::post('/{restockEntry}/reject', [RestockController::class, 'reject'])->name('restock.reject');
+        Route::get('/materials/{purchaseRequest}', [RestockController::class, 'getMaterialsForPurchaseRequest'])->name('restock.materials');
+        Route::get('/analytics', [RestockController::class, 'getAnalytics'])->name('restock.analytics');
+    });
     // Notification Routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/notifications', [NotificationController::class, 'indexPage'])->name('notifications.index');
@@ -123,13 +125,20 @@ Route::prefix('restock')->group(function () {
     });
 
     // API Routes for AJAX calls
-    Route::middleware(['auth'])->prefix('api')->group(function () {
-        Route::get('/notifications', [NotificationController::class, 'index']);
-        Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown']);
-        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::prefix('api/notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/dropdown', [NotificationController::class, 'dropdown']);
+        Route::get('/unread-count', [NotificationController::class, 'getUnreadCount']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::get('/{id}', [NotificationController::class, 'show']);
+        Route::post('/send-test', [NotificationController::class, 'sendTest']);
+
+        // Debug routes (optional - remove in production)
+        Route::get('/test/permissions', [NotificationController::class, 'testPermissions']);
+        Route::get('/test/cross-user', [NotificationController::class, 'testCrossUser']);
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Proforma extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'project_id',
         'customer_id',
@@ -20,11 +22,14 @@ class Proforma extends Model
         'payment_validity',
         'delivery_terms',
         'type',
-        'date'
+        'date',
+        'status',
+        'date',
+        'created_by',
+        'approved_by'
     ];
     protected $casts = [
-        
-        'date' => 'date', 
+        'date' => 'date',
     ];
     
     public function project()
@@ -45,5 +50,15 @@ class Proforma extends Model
     public function works()
     {
         return $this->hasMany(ProformaWork::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

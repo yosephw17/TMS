@@ -6,13 +6,17 @@ use App\Models\ProformaWork;
 use App\Models\Project;
 use App\Models\Material;
 use App\Models\CompanyInfo;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class ProformaController extends Controller
 {
-    public function __construct()
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
     {
         $this->middleware('auth');
+        $this->notificationService = $notificationService;
 
         $this->middleware('permission:manage-proforma', ['only' => ['index']]);
         $this->middleware('permission:proforma-view', ['only' => ['show']]);
@@ -48,6 +52,7 @@ class ProformaController extends Controller
             'materials.*.quantity' => 'nullable|numeric|min:0',
             'labor_cost' => 'nullable|numeric|min:0', 
             'other_costs' => 'nullable|numeric|min:0', 
+          
         ]);
     
 
@@ -85,6 +90,7 @@ class ProformaController extends Controller
             'payment_validity' => $request->input('payment_validity'),
             'delivery_terms' => $request->input('delivery_terms'),
             'date' => $request->input('date'),
+            'created_by' => auth()->id(),
         ]);
 
         if (!empty($materials)) {
@@ -100,6 +106,8 @@ class ProformaController extends Controller
             }
         }
         
+        // Send notification about proforma creation
+        $this->notificationService->notifyProformaCreated($proforma, auth()->id());
 
         return redirect()->route('projects.view', $request->input('project_id'))
                          ->with('success', 'Proforma created successfully.');
@@ -166,6 +174,8 @@ class ProformaController extends Controller
             'payment_validity' => $request->input('payment_validity'),
             'delivery_terms' => $request->input('delivery_terms'),
             'date' => $request->input('date'),
+            'created_by' => auth()->id(),
+            'approved_by' => auth()->id(),  
         ]);
     
         if (!empty($materials)) {
@@ -195,15 +205,14 @@ class ProformaController extends Controller
     }
     public function print($id)
 {
-    $proforma = Proforma::with('customer', 'materials')->findOrFail($id);
+    $proforma = Proforma::with('customer', 'materials', 'createdBy', 'approvedBy')->findOrFail($id);
     $companyInfo = CompanyInfo::find(1);
     return view('print.aluminiumProfilePrint', compact('proforma','companyInfo'));
 }
     public function printAccessories($id)
 {
     $companyInfo = CompanyInfo::find(1);
-    $proforma = Proforma::with('customer', 'materials')->findOrFail($id);
-    
+    $proforma = Proforma::with('customer', 'materials', 'createdBy', 'approvedBy')->findOrFail($id);
     return view('print.aluminiumAccessoriesPrint', compact('proforma','companyInfo'));
 }
     public function printWork($id)
@@ -307,4 +316,56 @@ public function destroyAccessoriesProforma(Proforma $proforma)
         return redirect()->back()
                          ->with('success', 'Proforma deleted successfully.');
     }
+
+
+
+public function approve($id)
+{
+    $proforma = Proforma::with('project')->findOrFail($id);
+
+    if ($proforma->status !== 'pending') {
+        return redirect()->back()->withErrors('Proforma is already ' . $proforma->status);
+    }
+
+    $proforma->update([
+        'status' => 'approved',
+        'approved_by' => auth()->id()
+    ]);
+
+    // Send notification about proforma approval
+    $this->notificationService->notifyProformaApproved($proforma, auth()->id());
+
+    return redirect()->back()->with('success', 'Proforma approved successfully.');
+}
+
+public function reject($id)
+{
+    $proforma = Proforma::with('project')->findOrFail($id);
+
+    if ($proforma->status !== 'pending') {
+        return redirect()->back()->withErrors('Proforma is already ' . $proforma->status);
+    }
+
+    $proforma->update([
+        'status' => 'rejected',
+        'approved_by' => auth()->id()
+    ]);
+
+    // Send notification about proforma rejection
+    $this->notificationService->createForUsersWithNotificationPermission('proforma_rejected', [
+        'type' => 'proforma_rejected',
+        'message' => "Proforma '{$proforma->ref_no}' has been rejected",
+        'data' => [
+            'proforma_id' => $proforma->id,
+            'proforma_ref' => $proforma->ref_no,
+            'project_id' => $proforma->project_id,
+            'project_name' => $proforma->project->name
+        ],
+        'action_url' => route('projects.showProject', $proforma->project_id),
+        'created_by' => auth()->id()
+    ]);
+
+    return redirect()->back()->with('success', 'Proforma rejected.');
+}
+
 }

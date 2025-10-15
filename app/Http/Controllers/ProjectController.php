@@ -60,16 +60,34 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'starting_date' => 'required|date',
-            'ending_date' => 'required|date',
-            'description' => 'required|string',
-            'location' => 'required|string|max:255',
-            'customer_id' => 'required|exists:customers,id',
-            'service_detail_ids' => 'nullable|array',
-            'team_ids' => 'nullable|array',
-        ]);
+        $customer = Customer::findOrFail($request->customer_id);
+
+        // Different validation for material customers
+        if ($customer->type === 'material') {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255',
+                'starting_date' => 'required|date',
+                'description' => 'required|string',
+                'customer_id' => 'required|exists:customers,id',
+                'ending_date' => 'nullable|date',
+                'location' => 'nullable|string|max:255',
+            ]);
+
+            // Set default values for material customers
+            $validatedData['ending_date'] = $validatedData['ending_date'] ?? $validatedData['starting_date'];
+            $validatedData['location'] = $validatedData['location'] ?? 'Material Order';
+        } else {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255',
+                'starting_date' => 'required|date',
+                'ending_date' => 'required|date',
+                'description' => 'required|string',
+                'location' => 'required|string|max:255',
+                'customer_id' => 'required|exists:customers,id',
+                'service_detail_ids' => 'nullable|array',
+                'team_ids' => 'nullable|array',
+            ]);
+        }
 
         $project = Project::create($validatedData);
 
@@ -81,12 +99,11 @@ class ProjectController extends Controller
             $project->teams()->sync($request->team_ids);
         }
 
-        // Create notification for new project
+        // Create notification for new project - send to all users with project-notification permission
         $customer = Customer::find($validatedData['customer_id']);
-        $this->notificationService->create([
+        $this->notificationService->createForUsersWithNotificationPermission('project_created', [
             'type' => 'project_created',
             'message' => "New project '{$project->name}' has been created for customer {$customer->name}",
-            'user_id' => auth()->id(),
             'action_url' => route('projects.index'),
             'data' => [
                 'project_id' => $project->id,
@@ -95,7 +112,8 @@ class ProjectController extends Controller
                 'customer_name' => $customer->name,
                 'starting_date' => $project->starting_date,
                 'ending_date' => $project->ending_date
-            ]
+            ],
+            'created_by' => auth()->id()
         ]);
 
         return redirect()->back()->with('success', 'Project created successfully.');
@@ -113,6 +131,11 @@ class ProjectController extends Controller
         $materials = Material::all();
         $teams = Team::all();
 
+        // Check if customer is material type - show different view
+        if ($customer->type === 'material') {
+            return view('projects.materials', compact('customer', 'projects', 'materials'));
+        }
+
         return view('projects.show', compact('customer', 'projects', 'services', 'materials', 'teams'));
     }
 
@@ -129,6 +152,17 @@ class ProjectController extends Controller
         $workProformas = $project->proformas()->where('type', 'work')->get();
         $teams = Team::all();
         $dailyActivities = $project->dailyActivities;
+
+        // Check if customer is material type - show simplified view
+        if ($customer->type === 'material') {
+            return view('projects.material-view', compact(
+                'customer',
+                'project',
+                'materials',
+                'profileProformas',
+                'accessoriesProformas'
+            ));
+        }
 
         return view('projects.view', compact(
             'customer',
@@ -162,7 +196,6 @@ class ProjectController extends Controller
             'service_detail_ids' => 'required|array',
             'service_detail_ids.*' => 'exists:service_details,id',
             'team_ids' => 'nullable|array',
-
         ]);
 
         $project->update($request->except('service_detail_ids'));
@@ -193,7 +226,7 @@ class ProjectController extends Controller
         }
 
         foreach ($selectedMaterials as $materialId) {
-            $quantity = $quantities[$materialId];
+            $quantity = $quantities[$materialId] ?? 1; // Default to 1 if not set
             $project->materials()->attach($materialId, ['quantity' => $quantity]);
         }
 

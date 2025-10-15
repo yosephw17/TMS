@@ -15,7 +15,7 @@ class NotificationService
     {
         $notificationTypes = Notification::getNotificationTypes();
         $type = $data['type'];
-        
+
         // Get default configuration for the notification type
         $config = $notificationTypes[$type] ?? [
             'icon' => 'fas fa-bell',
@@ -42,12 +42,12 @@ class NotificationService
     public function createForUsers(array $userIds, array $data): Collection
     {
         $notifications = collect();
-        
+
         foreach ($userIds as $userId) {
             $notificationData = array_merge($data, ['user_id' => $userId]);
             $notifications->push($this->create($notificationData));
         }
-        
+
         return $notifications;
     }
 
@@ -59,6 +59,34 @@ class NotificationService
         $users = User::whereHas('roles.permissions', function ($query) use ($permission) {
             $query->where('name', $permission);
         })->pluck('id')->toArray();
+
+        return $this->createForUsers($users, $data);
+    }
+
+    /**
+     * Create notification for users with notification-specific permissions
+     */
+    public function createForUsersWithNotificationPermission(string $notificationType, array $data): Collection
+    {
+        $notificationTypes = Notification::getNotificationTypes();
+        $requiredPermission = $notificationTypes[$notificationType]['permission'] ?? null;
+
+        if (!$requiredPermission) {
+            // If no specific permission required, send to all users
+            $users = User::pluck('id')->toArray();
+        } else {
+            // Only send to users with the required permission
+            $users = User::whereHas('roles.permissions', function ($query) use ($requiredPermission) {
+                $query->where('name', $requiredPermission);
+            })->pluck('id')->toArray();
+        }
+
+        // Debug logging
+        \Log::info("Creating notification for type: {$notificationType}", [
+            'required_permission' => $requiredPermission,
+            'users_found' => count($users),
+            'user_ids' => $users
+        ]);
 
         return $this->createForUsers($users, $data);
     }
@@ -87,11 +115,17 @@ class NotificationService
     }
 
     /**
-     * Get unread notifications count for a user
+     * Get unread notifications count for a user (filtered by permissions)
      */
     public function getUnreadCount(int $userId): int
     {
+        $user = User::find($userId);
+        if (!$user) {
+            return 0;
+        }
+
         return Notification::where('user_id', $userId)
+            ->forUser($user)
             ->unread()
             ->count();
     }
@@ -135,7 +169,7 @@ class NotificationService
      */
     public function notifyProjectCreated($project, $createdBy = null): Collection
     {
-        return $this->createForUsersWithPermission('project-view', [
+        return $this->createForUsersWithNotificationPermission('project_created', [
             'type' => 'project_created',
             'message' => "New project '{$project->name}' has been created for customer {$project->customer->name}",
             'data' => [
@@ -148,21 +182,20 @@ class NotificationService
             'created_by' => $createdBy ?? auth()->id()
         ]);
     }
-
     /**
      * Create customer-related notifications
      */
     public function notifyCustomerAdded($customer, $createdBy = null): Collection
     {
-        return $this->createForUsersWithPermission('customer-view', [
+        return $this->createForUsersWithNotificationPermission('customer_added', [
             'type' => 'customer_added',
             'message' => "New customer '{$customer->name}' has been added to the system",
             'data' => [
                 'customer_id' => $customer->id,
                 'customer_name' => $customer->name,
-                'customer_email' => $customer->email
+                'customer_phone' => $customer->phone
             ],
-            'action_url' => route('customers.view', $customer->id),
+            'action_url' => route('customers.index'),
             'created_by' => $createdBy ?? auth()->id()
         ]);
     }
@@ -172,7 +205,7 @@ class NotificationService
      */
     public function notifyServiceAdded($service, $createdBy = null): Collection
     {
-        return $this->createForAdmins([
+        return $this->createForUsersWithNotificationPermission('service_added', [
             'type' => 'service_added',
             'message' => "New service '{$service->name}' has been added",
             'data' => [
@@ -189,7 +222,7 @@ class NotificationService
      */
     public function notifyPurchaseRequestCreated($purchaseRequest, $createdBy = null): Collection
     {
-        return $this->createForUsersWithPermission('purchase-approve', [
+        return $this->createForUsersWithNotificationPermission('purchase_request_created', [
             'type' => 'purchase_request_created',
             'message' => "New purchase request for '{$purchaseRequest->item_name}' requires approval",
             'data' => [
@@ -197,7 +230,7 @@ class NotificationService
                 'item_name' => $purchaseRequest->item_name,
                 'amount' => $purchaseRequest->amount
             ],
-            'action_url' => route('purchase-requests.view', $purchaseRequest->id),
+            'action_url' => route('purchase-requests.index'),
             'created_by' => $createdBy ?? auth()->id()
         ]);
     }
@@ -207,10 +240,7 @@ class NotificationService
      */
     public function notifyDeadlineReminder($project): Collection
     {
-        // Notify project team members and managers
-        $userIds = $project->teams->pluck('users')->flatten()->pluck('id')->unique()->toArray();
-        
-        return $this->createForUsers($userIds, [
+        return $this->createForUsersWithNotificationPermission('deadline_reminder', [
             'type' => 'deadline_reminder',
             'message' => "Project '{$project->name}' deadline is approaching ({$project->ending_date})",
             'data' => [
@@ -219,6 +249,81 @@ class NotificationService
                 'deadline' => $project->ending_date
             ],
             'action_url' => route('projects.view', $project->id)
+        ]);
+    }
+
+    /**
+     * Create material-related notifications
+     */
+    public function notifyMaterialAdded($material, $createdBy = null): Collection
+    {
+        return $this->createForUsersWithNotificationPermission('material_added', [
+            'type' => 'material_added',
+            'message' => "New material '{$material->name}' has been added to inventory",
+            'data' => [
+                'material_id' => $material->id,
+                'material_name' => $material->name,
+                'material_type' => $material->type
+            ],
+            'action_url' => route('materials.index'),
+            'created_by' => $createdBy ?? auth()->id()
+        ]);
+    }
+
+    /**
+     * Create proforma-related notifications
+     */
+    public function notifyProformaCreated($proforma, $createdBy = null): Collection
+    {
+        return $this->createForUsersWithNotificationPermission('proforma_created', [
+            'type' => 'proforma_created',
+            'message' => "New proforma '{$proforma->ref_no}' has been created for project '{$proforma->project->name}'",
+            'data' => [
+                'proforma_id' => $proforma->id,
+                'proforma_ref' => $proforma->ref_no,
+                'project_id' => $proforma->project_id,
+                'project_name' => $proforma->project->name
+            ],
+            'action_url' => route('projects.view', $proforma->project_id),
+            'created_by' => $createdBy ?? auth()->id()
+        ]);
+    }
+
+    /**
+     * Create proforma approval notifications
+     */
+    public function notifyProformaApproved($proforma, $approvedBy = null): Collection
+    {
+        return $this->createForUsersWithNotificationPermission('proforma_approved', [
+            'type' => 'proforma_approved',
+            'message' => "Proforma '{$proforma->ref_no}' has been approved",
+            'data' => [
+                'proforma_id' => $proforma->id,
+                'proforma_ref' => $proforma->ref_no,
+                'project_id' => $proforma->project_id,
+                'project_name' => $proforma->project->name
+            ],
+            'action_url' => route('projects.view', $proforma->project_id),
+            'created_by' => $approvedBy ?? auth()->id()
+        ]);
+    }
+
+    /**
+     * Create team member notifications
+     */
+    public function notifyTeamMemberAdded($team, $user, $createdBy = null): Collection
+    {
+        return $this->createForUsersWithNotificationPermission('team_member_added', [
+            'type' => 'team_member_added',
+            'message' => "New team member '{$user->name}' has been added to team '{$team->name}'",
+            'data' => [
+                'team_id' => $team->id,
+                'team_name' => $team->name,
+                'user_id' => $user->id,
+                'user_name' => $user->name
+            ],
+            'action_url' => route('teams.index'),
+            'created_by' => $createdBy ?? auth()->id()
         ]);
     }
 }

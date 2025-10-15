@@ -41,8 +41,17 @@
                         $totalRemaining = $materialEntries->sum('pivot.remaining_quantity');
                         $totalUsed = $materialEntries->sum('pivot.total_used');
                         $totalValue = $materialEntries->sum('pivot.current_total_value');
-                        $averagePrice = $totalRemaining > 0 ? $totalValue / $totalRemaining : 0;
-                        $referenceCount = $materialEntries->where('pivot.reference_number', '!=', null)->count();
+                        // Calculate simple average of unit prices (not weighted by quantity)
+                        // Only include ACTIVE entries in the average calculation
+                        $totalPrice = 0;
+                        $entryCount = 0;
+                        foreach ($materialEntries as $entry) {
+                            if ($entry->pivot->unit_price && $entry->pivot->status === 'active') {
+                                $totalPrice += $entry->pivot->unit_price;
+                                $entryCount++;
+                            }
+                        }
+                        $averagePrice = $entryCount > 0 ? $totalPrice / $entryCount : 0;
                         $activeEntries = $materialEntries->where('pivot.status', 'active')->count();
                         $depletedEntries = $materialEntries->where('pivot.status', 'depleted')->count();
                     @endphp
@@ -330,8 +339,41 @@
                             </div>
                         </div>
 
-                        <!-- Remove Material Modal (existing) -->
-                        <!-- ... existing remove modal code ... -->
+                        <!-- Remove Material Modal -->
+                        <div class="modal fade" id="removeMaterialModal{{ $entry->id }}_{{ $index }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Remove Material Entry</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <strong>Warning:</strong> This action cannot be undone. This will permanently remove this material entry from the stock.
+                                        </div>
+                                        <div class="alert alert-info">
+                                            <strong>Material:</strong> {{ $material->name }}<br>
+                                            <strong>Reference:</strong> {{ $entry->pivot->reference_number ?? 'No Reference' }}<br>
+                                            <strong>Remaining Quantity:</strong> {{ $entry->pivot->remaining_quantity ?? $entry->pivot->quantity }} {{ $material->unit_of_measurement }}<br>
+                                            <strong>Current Value:</strong> ${{ number_format($entry->pivot->current_total_value, 2) }}
+                                        </div>
+                                        <form action="{{ route('stocks.removeMaterial', [$stock->id, $entry->id, $entry->pivot->id ?? 0]) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <div class="mb-3">
+                                                <label class="form-label">Reason for Removal</label>
+                                                <textarea name="reason" class="form-control" rows="3" 
+                                                          placeholder="Please provide a reason for removing this material entry..." required></textarea>
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="submit" class="btn btn-danger">Confirm Removal</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endforeach
                 @endforeach
             </div>
@@ -348,7 +390,7 @@
 
     <!-- Add Material Modal -->
     <div class="modal fade" id="addMaterialModal" tabindex="-1" aria-labelledby="addMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addMaterialModalLabel">Add Materials to Stock</h5>
@@ -360,88 +402,184 @@
                         
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            <strong>Reference Numbers:</strong> Each material will automatically get a unique reference number when added to stock (e.g., WAR-ALU-20241222-001)
+                            <strong>Reference Numbers:</strong> Each material will automatically get a unique reference number when added to stock
                         </div>
                         
+                        <!-- Search and Filter Section -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Search Materials</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="text" id="materialSearch" class="form-control" 
+                                                   placeholder="Search by material name, color, or description...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Filter by Category</label>
+                                        <select id="categoryFilter" class="form-select">
+                                            <option value="">All Categories</option>
+                                            @php
+                                                $categories = $materials->pluck('category')->filter()->unique()->sort();
+                                            @endphp
+                                            @foreach($categories as $category)
+                                                <option value="{{ $category }}">{{ $category }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Quick Actions</label>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-outline-primary btn-sm flex-fill" 
+                                                    onclick="selectAllMaterials()">
+                                                <i class="fas fa-check-square me-1"></i>Select All
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" 
+                                                    onclick="deselectAllMaterials()">
+                                                <i class="fas fa-times-circle me-1"></i>Deselect All
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Selected Counter -->
+                                <div class="mt-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary" id="selectedCount">0 materials selected</span>
+                                        <span class="badge bg-success ms-2" id="totalValue">Total: $0.00</span>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">
+                                            Showing <span id="visibleCount">{{ $materials->count() }}</span> of {{ $materials->count() }} materials
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Materials Grid -->
                         <div class="form-group">
-                            <label for="materials" class="form-label fw-bold">Select Materials and Set Prices</label>
-                            <p class="text-muted small">Check the materials you want to add, then fill in quantity and unit price for each selected material.</p>
-                            
-                            <div class="row">
+                            <div class="row" id="materialsGrid">
                                 @foreach ($materials as $material)
-                                    <div class="col-md-12 mb-3">
-                                        <div class="card border">
+                                    <div class="col-lg-6 col-xl-4 mb-3 material-item" 
+                                         data-name="{{ strtolower($material->name) }}"
+                                         data-color="{{ strtolower($material->color ?? '') }}"
+                                         data-category="{{ strtolower($material->category ?? '') }}"
+                                         data-description="{{ strtolower($material->description ?? '') }}">
+                                        <div class="card border h-100 material-card">
                                             <div class="card-body p-3">
-                                                <!-- Material Selection -->
-                                                <div class="form-check mb-3">
-                                                    <input class="form-check-input material-checkbox" type="checkbox" 
-                                                           name="materials[]" value="{{ $material->id }}" 
-                                                           id="material{{ $material->id }}"
-                                                           onchange="toggleMaterialFields({{ $material->id }})">
-                                                    <label class="form-check-label fw-bold fs-6" for="material{{ $material->id }}">
-                                                        <i class="fas fa-cube text-primary me-2"></i>
-                                                        {{ $material->name }}
-                                                        @if ($material->color)
-                                                            <span class="badge bg-secondary ms-2">{{ $material->color }}</span>
+                                                <!-- Material Selection Header -->
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input material-checkbox" type="checkbox" 
+                                                               name="materials[]" value="{{ $material->id }}" 
+                                                               id="material{{ $material->id }}"
+                                                               onchange="toggleMaterialFields({{ $material->id }})">
+                                                        <label class="form-check-label fw-bold" for="material{{ $material->id }}">
+                                                            {{ $material->name }}
+                                                        </label>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        @if($material->color)
+                                                            <span class="badge bg-secondary">{{ $material->color }}</span>
                                                         @endif
-                                                        <small class="text-muted d-block">{{ $material->unit_of_measurement }}</small>
-                                                    </label>
+                                                        @if($material->category)
+                                                            <span class="badge bg-light text-dark small">{{ $material->category }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Material Details -->
+                                                <div class="small text-muted mb-2">
+                                                    <div><i class="fas fa-ruler me-1"></i>{{ $material->unit_of_measurement }}</div>
+                                                    @if($material->description)
+                                                        <div class="mt-1">{{ Str::limit($material->description, 60) }}</div>
+                                                    @endif
                                                 </div>
                                                 
                                                 <!-- Pricing Fields (Hidden by default) -->
                                                 <div id="fields{{ $material->id }}" class="material-fields" style="display: none;">
+                                                    <hr class="my-2">
                                                     <div class="row g-2">
-                                                        <div class="col-md-3">
+                                                        <div class="col-6">
                                                             <label class="form-label small fw-bold">Quantity <span class="text-danger">*</span></label>
                                                             <input type="number" name="quantities[{{ $material->id }}]"
-                                                                   class="form-control" placeholder="Enter quantity" 
+                                                                   class="form-control form-control-sm" placeholder="Qty" 
                                                                    min="1" step="1" onchange="calculateTotal({{ $material->id }})">
-                                                            <small class="text-muted">Units: {{ $material->unit_of_measurement }}</small>
+                                                            <small class="text-muted">{{ $material->unit_of_measurement }}</small>
                                                         </div>
-                                                        <div class="col-md-3">
+                                                        <div class="col-6">
                                                             <label class="form-label small fw-bold">Unit Price <span class="text-danger">*</span></label>
-                                                            <div class="input-group">
+                                                            <div class="input-group input-group-sm">
                                                                 <span class="input-group-text">$</span>
                                                                 <input type="number" name="unit_prices[{{ $material->id }}]"
                                                                        class="form-control" placeholder="0.00" 
                                                                        step="0.01" min="0" onchange="calculateTotal({{ $material->id }})">
                                                             </div>
-                                                            <small class="text-muted">Price per {{ $material->unit_of_measurement }}</small>
                                                         </div>
-                                                        <div class="col-md-3">
+                                                    </div>
+                                                    <div class="row g-2 mt-1">
+                                                        <div class="col-6">
                                                             <label class="form-label small fw-bold">Total Price</label>
                                                             <input type="text" id="total{{ $material->id }}" 
-                                                                   class="form-control bg-light" readonly 
+                                                                   class="form-control form-control-sm bg-light" readonly 
                                                                    placeholder="$0.00">
-                                                            <small class="text-muted">Auto calculated</small>
                                                         </div>
-                                                        <div class="col-md-3">
-                                                            <label class="form-label small fw-bold">Reference</label>
-                                                            <input type="text" class="form-control bg-light" 
-                                                                   placeholder="Auto generated" readonly>
-                                                            <small class="text-success">Will be generated</small>
+                                                        <div class="col-6">
+                                                            <label class="form-label small fw-bold">Batch No.</label>
+                                                            <input type="text" name="batch_numbers[{{ $material->id }}]"
+                                                                   class="form-control form-control-sm" 
+                                                                   placeholder="Optional">
                                                         </div>
                                                     </div>
-                                                    <div class="row mt-2">
-                                                        <div class="col-md-12">
-                                                            <label class="form-label small fw-bold">Notes (Optional)</label>
-                                                            <textarea name="notes[{{ $material->id }}]" 
-                                                                    class="form-control" rows="2" 
-                                                                    placeholder="Enter any notes about this material batch (supplier, quality, etc.)"></textarea>
-                                                        </div>
+                                                    <div class="mt-2">
+                                                        <label class="form-label small fw-bold">Supplier & Notes</label>
+                                                        <textarea name="notes[{{ $material->id }}]" 
+                                                                class="form-control form-control-sm" rows="2" 
+                                                                placeholder="Supplier, quality notes, etc."></textarea>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div class="card-footer bg-transparent p-2">
+                                                <small class="text-muted">
+                                                    ID: {{ $material->id }} • Ref: Auto-generated
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
+                            
+                            <!-- No Results Message -->
+                            <div id="noResults" class="text-center py-5" style="display: none;">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Materials Found</h5>
+                                <p class="text-muted">Try adjusting your search terms or filters</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="clearSearch()">
+                                    Clear Search
+                                </button>
+                            </div>
                         </div>
                         
-                        <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-plus-circle me-2"></i>Add Materials with Pricing
-                            </button>
+                        <!-- Summary and Submit -->
+                        <div class="card mt-4 bg-light">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h6 class="mb-1">Selection Summary</h6>
+                                        <div class="small text-muted" id="selectionSummary">
+                                            No materials selected
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-plus-circle me-2"></i>Add Selected Materials
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -527,51 +665,50 @@
             </div>
         </div>
     </div>
-
-    <!-- ... rest of the code remains the same ... -->
 @endsection
 
 <script>
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     
+    // Initialize search functionality
+    initMaterialSearch();
+    
+    // Update selection counters
+    updateSelectionCounters();
+    
     // Define functions globally so they can be called from inline event handlers
     window.toggleMaterialFields = function(materialId) {
         const checkbox = document.getElementById('material' + materialId);
         const fields = document.getElementById('fields' + materialId);
+        const card = fields.closest('.material-card');
         const quantityInput = document.querySelector(`input[name="quantities[${materialId}]"]`);
         const priceInput = document.querySelector(`input[name="unit_prices[${materialId}]"]`);
-        const notesInput = document.querySelector(`textarea[name="notes[${materialId}]"]`);
         
         if (checkbox.checked) {
-            // Show fields with smooth animation
+            // Show fields and highlight card
             fields.style.display = 'block';
-            fields.style.opacity = '0';
-            setTimeout(() => {
-                fields.style.transition = 'opacity 0.3s ease-in-out';
-                fields.style.opacity = '1';
-            }, 10);
+            card.classList.add('border-primary', 'bg-light');
             
             quantityInput.required = true;
             priceInput.required = true;
             
-            // Focus on quantity field for better UX
+            // Add animation
+            card.style.transition = 'all 0.3s ease';
             setTimeout(() => quantityInput.focus(), 100);
         } else {
-            // Hide fields with animation
-            fields.style.transition = 'opacity 0.3s ease-in-out';
-            fields.style.opacity = '0';
-            setTimeout(() => {
-                fields.style.display = 'none';
-            }, 300);
+            // Hide fields and remove highlight
+            fields.style.display = 'none';
+            card.classList.remove('border-primary', 'bg-light');
             
             quantityInput.required = false;
             priceInput.required = false;
             quantityInput.value = '';
             priceInput.value = '';
-            notesInput.value = '';
             document.getElementById('total' + materialId).value = '';
         }
+        
+        updateSelectionCounters();
     };
 
     window.calculateTotal = function(materialId) {
@@ -587,6 +724,8 @@ document.addEventListener('DOMContentLoaded', function() {
             totalField.value = '$0.00';
             totalField.classList.remove('text-success', 'fw-bold');
         }
+        
+        updateSelectionCounters();
     };
 
     // Print functionality - Define globally
@@ -616,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (checkedBoxes.length === 0) {
                 e.preventDefault();
-                alert('Please select at least one material to add to stock.');
+                showAlert('Please select at least one material to add to stock.', 'warning');
                 return false;
             }
             
@@ -641,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!isValid) {
                 e.preventDefault();
-                alert('Please fix the following issues:\n\n' + errorMessage);
+                showAlert('Please fix the following issues:\n\n' + errorMessage, 'warning');
                 return false;
             }
             
@@ -659,6 +798,126 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function initMaterialSearch() {
+    const searchInput = document.getElementById('materialSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const materialItems = document.querySelectorAll('.material-item');
+    
+    function filterMaterials() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const categoryValue = categoryFilter.value.toLowerCase();
+        let visibleCount = 0;
+        
+        materialItems.forEach(item => {
+            const name = item.dataset.name;
+            const color = item.dataset.color;
+            const category = item.dataset.category;
+            const description = item.dataset.description;
+            
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                color.includes(searchTerm) || 
+                description.includes(searchTerm);
+            
+            const matchesCategory = !categoryValue || category.includes(categoryValue);
+            
+            if (matchesSearch && matchesCategory) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Update visible count
+        document.getElementById('visibleCount').textContent = visibleCount;
+        
+        // Show/hide no results message
+        const noResults = document.getElementById('noResults');
+        if (visibleCount === 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+        }
+    }
+    
+    searchInput.addEventListener('input', filterMaterials);
+    categoryFilter.addEventListener('change', filterMaterials);
+}
+
+function selectAllMaterials() {
+    const visibleItems = document.querySelectorAll('.material-item[style="display: block"]');
+    visibleItems.forEach(item => {
+        const checkbox = item.querySelector('.material-checkbox');
+        if (checkbox && !checkbox.checked) {
+            checkbox.checked = true;
+            toggleMaterialFields(checkbox.value);
+        }
+    });
+    updateSelectionCounters();
+}
+
+function deselectAllMaterials() {
+    const checkboxes = document.querySelectorAll('.material-checkbox:checked');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        toggleMaterialFields(checkbox.value);
+    });
+    updateSelectionCounters();
+}
+
+function clearSearch() {
+    document.getElementById('materialSearch').value = '';
+    document.getElementById('categoryFilter').value = '';
+    initMaterialSearch(); // Re-run filter to show all
+}
+
+function updateSelectionCounters() {
+    const selectedCheckboxes = document.querySelectorAll('.material-checkbox:checked');
+    const selectedCount = selectedCheckboxes.length;
+    
+    // Update selected count
+    document.getElementById('selectedCount').textContent = 
+        `${selectedCount} material${selectedCount !== 1 ? 's' : ''} selected`;
+    
+    // Calculate total value
+    let totalValue = 0;
+    selectedCheckboxes.forEach(checkbox => {
+        const materialId = checkbox.value;
+        const totalField = document.getElementById(`total${materialId}`);
+        if (totalField && totalField.value) {
+            const value = parseFloat(totalField.value.replace('$', '')) || 0;
+            totalValue += value;
+        }
+    });
+    
+    // Update total value
+    document.getElementById('totalValue').textContent = 
+        `Total: $${totalValue.toFixed(2)}`;
+    
+    // Update selection summary
+    const summaryElement = document.getElementById('selectionSummary');
+    if (selectedCount === 0) {
+        summaryElement.innerHTML = '<span class="text-muted">No materials selected</span>';
+    } else {
+        const materialNames = Array.from(selectedCheckboxes).map(checkbox => {
+            const label = document.querySelector(`label[for="material${checkbox.value}"]`);
+            return label ? label.textContent.trim() : '';
+        }).filter(name => name);
+        
+        if (materialNames.length <= 3) {
+            summaryElement.textContent = `Selected: ${materialNames.join(', ')}`;
+        } else {
+            summaryElement.textContent = `Selected: ${materialNames.slice(0, 3).join(', ')} and ${selectedCount - 3} more`;
+        }
+    }
+}
+
+function showAlert(message, type = 'info') {
+    // Simple alert for now - you can replace with a toast notification system
+    alert(message);
+}
 </script>
 
 <style>
@@ -698,6 +957,62 @@ document.addEventListener('DOMContentLoaded', function() {
 .timeline-content p {
     margin-bottom: 5px;
     color: #666;
+}
+
+/* Material card styles */
+.material-card {
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.material-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.material-card.border-primary {
+    border-width: 2px !important;
+}
+
+.material-fields {
+    transition: all 0.3s ease-in-out;
+}
+
+#materialsGrid {
+    transition: all 0.3s ease;
+}
+
+/* Smooth animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom scrollbar for modal */
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 /* Print styles */

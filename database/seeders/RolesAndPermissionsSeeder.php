@@ -30,6 +30,18 @@ class RolesAndPermissionsSeeder extends Seeder
             'customer-create',
             'customer-edit',
             'customer-delete',
+            
+            // Notifications
+            'manage-notification',
+            'notification-view',
+            'customer-notification',
+            'project-notification',
+            'service-notification',
+            'material-notification',
+            'proforma-notification',
+            'purchase-request-notification',
+            'team-notification',
+            'system-notification',
             // Daily activity
             'daily-activity-create',
             
@@ -144,7 +156,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
 
@@ -153,9 +165,8 @@ class RolesAndPermissionsSeeder extends Seeder
         ];
 
         foreach ($roles as $roleName => $rolePermissions) {
-            $role = Role::create(['name' => $roleName]);
+            $role = Role::firstOrCreate(['name' => $roleName]);
             $role->syncPermissions($rolePermissions);
-
         }
     }
 }

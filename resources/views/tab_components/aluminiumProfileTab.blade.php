@@ -39,31 +39,88 @@
                             <td>{{ $proforma->discount }}</td>
                             <td>{{ $proforma->final_total }}</td>
                             <td>
-                                @can('proforma-edit')
-                                    <button class="btn btn-outline-primary btn-sm edit-proforma-btn" data-bs-toggle="modal"
-                                        data-bs-target="#editProfileProformaModal{{ $proforma->id }}">
-                                        Edit
-                                    </button>
-                                @endcan
-                                <form action="{{ route('proformas.destroy', $proforma->id) }}" method="POST"
-                                    style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    @can('proforma-delete')
-                                        <button type="submit" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Are you sure you want to delete this proforma?')">
-                                            Delete
+                                <div class="d-flex align-items-center">
+                                    {{-- Status Badge --}}
+                                    @if ($proforma->status === 'pending')
+                                        <span class="badge bg-warning me-2">Pending</span>
+                                    @elseif($proforma->status === 'approved')
+                                        <span class="badge bg-success me-2">Approved</span>
+                                    @elseif($proforma->status === 'rejected')
+                                        <span class="badge bg-danger me-2">Rejected</span>
+                                    @endif
+
+                                    {{-- Actions Dropdown --}}
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                            id="actionsDropdown{{ $proforma->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
                                         </button>
-                                    @endcan
-                                </form>
-                                @can('proforma-print')
-                                    <a href="{{ route('print.aluminiumProfile', $proforma->id) }}"
-                                        class="btn btn-secondary" target="_blank"
-                                        onclick="event.preventDefault(); window.open(this.href, '_blank'); return false;">
-                                        <i class="fas fa-print"></i>
-                                        Print
-                                    </a>
-                                @endcan
+                                        <ul class="dropdown-menu" aria-labelledby="actionsDropdown{{ $proforma->id }}">
+                                            {{-- Approval Actions (only for pending proformas) --}}
+                                            @if ($proforma->status === 'pending')
+                                                @can('proforma-edit')
+                                                    <li>
+                                                        <form action="{{ route('proformas.approve', $proforma->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="dropdown-item text-success" 
+                                                                onclick="return confirm('Are you sure you want to approve this proforma?')">
+                                                                <i class="fas fa-check me-2"></i>Approve
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('proformas.decline', $proforma->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="dropdown-item text-danger" 
+                                                                onclick="return confirm('Are you sure you want to decline this proforma?')">
+                                                                <i class="fas fa-times me-2"></i>Decline
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                @endcan
+                                            @endif
+
+                                            {{-- Edit Action --}}
+                                            @can('proforma-edit')
+                                                <li>
+                                                    <button class="dropdown-item" data-bs-toggle="modal"
+                                                        data-bs-target="#editProfileProformaModal{{ $proforma->id }}">
+                                                        <i class="fas fa-edit me-2"></i>Edit
+                                                    </button>
+                                                </li>
+                                            @endcan
+
+                                            {{-- Print Action --}}
+                                            @can('proforma-print')
+                                                <li>
+                                                    <a href="{{ route('print.aluminiumProfile', $proforma->id) }}"
+                                                        class="dropdown-item" target="_blank"
+                                                        onclick="event.preventDefault(); window.open(this.href, '_blank'); return false;">
+                                                        <i class="fas fa-print me-2"></i>Print
+                                                    </a>
+                                                </li>
+                                            @endcan
+
+                                            {{-- Delete Action --}}
+                                            @can('proforma-delete')
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form action="{{ route('proformas.destroy', $proforma->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item text-danger"
+                                                            onclick="return confirm('Are you sure you want to delete this proforma?')">
+                                                            <i class="fas fa-trash me-2"></i>Delete
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            @endcan
+                                        </ul>
+                                    </div>
+                                </div>
                             </td>
 
                         </tr>

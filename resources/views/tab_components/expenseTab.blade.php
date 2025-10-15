@@ -7,6 +7,21 @@
             if ($project->costsNeedUpdate()) {
                 $project->calculateAndUpdateCosts();
             }
+            
+            // Debug: Log the project data being used in the view
+            \Log::info("View Project Data Debug", [
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'actual_cost' => $project->actual_cost,
+                'material_cost' => $project->material_cost,
+                'labour_cost' => $project->labour_cost,
+                'transport_cost' => $project->transport_cost,
+                'other_cost' => $project->other_cost,
+                'budget_variance' => $project->budget_variance,
+                'cost_percentage' => $project->cost_percentage,
+                'cost_last_updated' => $project->cost_last_updated,
+                'total_price' => $project->total_price
+            ]);
         @endphp
 
         @if ($project->purchaseRequests->count() > 0)
@@ -105,13 +120,25 @@
                                         @endphp
                                         @foreach ($purchaseRequest->materials as $material)
                                             @php
-                                                // Use weighted average price for professional cost calculation
-                                                $weightedPrice = $material->getWeightedAveragePrice($purchaseRequest->stock_id);
-                                                $materialCost = $material->pivot->quantity * $weightedPrice;
+                                                // Use the simple average price stored in pivot table
+                                                $averagePrice = $material->pivot->weighted_avg_price ?? 0;
+                                                $materialCost = $material->pivot->total_cost ?? ($material->pivot->quantity * $averagePrice);
                                                 $stockTotal += $materialCost;
+                                                
+                                                // Debug: Log the values being used
+                                                \Log::info("View Debug - Material Cost Calculation", [
+                                                    'purchase_request_id' => $purchaseRequest->id,
+                                                    'material_id' => $material->id,
+                                                    'material_name' => $material->name,
+                                                    'pivot_weighted_avg_price' => $material->pivot->weighted_avg_price,
+                                                    'pivot_total_cost' => $material->pivot->total_cost,
+                                                    'pivot_quantity' => $material->pivot->quantity,
+                                                    'calculated_average_price' => $averagePrice,
+                                                    'calculated_material_cost' => $materialCost
+                                                ]);
                                             @endphp
                                             <p>${{ number_format($materialCost, 2) }} 
-                                               <small class="text-muted">(@ ${{ number_format($weightedPrice, 2) }}/{{ $material->unit_of_measurement }})</small>
+                                               <small class="text-muted">(@ ${{ number_format($averagePrice, 2) }}/{{ $material->unit_of_measurement }})</small>
                                             </p>
                                         @endforeach
                                         <p><strong>${{ number_format($stockTotal, 2) }}</strong></p>
@@ -190,11 +217,11 @@
                                 @foreach($project->restockEntries->sortByDesc('created_at') as $restock)
                                     <tr>
                                         <td><small class="font-weight-bold">{{ $restock->restock_reference }}</small></td>
-                                        <td>{{ $restock->material->name }}</td>
-                                        <td>{{ $restock->quantity_restocked }} {{ $restock->material->unit_of_measurement }}</td>
+                                        <td>{{ $restock->material ? $restock->material->name : 'Material Not Found' }}</td>
+                                        <td>{{ $restock->quantity_restocked }} {{ $restock->material ? $restock->material->unit_of_measurement : '' }}</td>
                                         <td>${{ number_format($restock->total_cost_deducted, 2) }}</td>
                                         <td><span class="badge badge-{{ $restock->status_color }}">{{ ucfirst($restock->status) }}</span></td>
-                                        <td>{{ $restock->restockedBy->name }}</td>
+                                        <td>{{ $restock->restockedBy ? $restock->restockedBy->name : 'Unknown User' }}</td>
                                         <td>{{ $restock->created_at->format('M d, Y') }}</td>
                                         <td>
                                             @if($restock->status === 'pending')

@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->string('code')->nullable();
                 $table->string('symbol')->nullable();
                 $table->string('color')->nullable();
-                $table->decimal('unit_price', 10, 2); 
+                $table->decimal('unit_price', 10, 2)->default(0.00); 
                 $table->string('unit_of_measurement');
                 $table->enum('type', ['aluminium_profile', 'aluminium_accessory','finishing','other']);
                 $table->timestamps();

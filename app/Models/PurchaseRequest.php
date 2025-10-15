@@ -23,7 +23,7 @@ class PurchaseRequest extends Model
     public function materials()
     {
         return $this->belongsToMany(Material::class, 'purchase_request_material')
-                    ->withPivot('quantity')
+                    ->withPivot(['quantity', 'total_cost', 'weighted_avg_price'])
                     ->withTimestamps();
     }
 }
