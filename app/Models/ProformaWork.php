@@ -14,11 +14,23 @@ class ProformaWork extends Model
         'work_unit', 
         'work_amount', 
         'work_quantity', 
-        'work_total'
+        'work_total',
+        'created_by',
+        'approved_by'
     ];
 
     public function proforma()
     {
         return $this->belongsTo(Proforma::class);
+    }
+
+    // User relationship for tracking
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

@@ -36,7 +36,13 @@ class PurchaseRequestController extends Controller
     {
         $user = auth()->user();
         $materials = Material::all();
-        $projects = Project::where('status', 'pending')->get();
+
+
+
+        $projects = Project::whereHas('customer', function($query) {
+            $query->where('type', 'project');
+        })->where('status', 'pending')->get();
+
         $stocks = Stock::all();
         
         if ($user->hasRole('Admin')) {
@@ -104,10 +110,9 @@ class PurchaseRequestController extends Controller
         $project = Project::find($request->project_id);
         $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
         
-        $this->notificationService->create([
+        $this->notificationService->createForUsersWithNotificationPermission('purchase_request_created', [
             'type' => 'purchase_request_created',
             'message' => "New purchase request for '{$itemName}' requires approval (Project: {$project->name})",
-            'user_id' => auth()->id(),
             'action_url' => route('purchase_requests.index'),
             'data' => [
                 'purchase_request_id' => $purchaseRequest->id,
@@ -116,7 +121,8 @@ class PurchaseRequestController extends Controller
                 'item_name' => $itemName,
                 'type' => $request->type,
                 'price' => $price
-            ]
+            ],
+            'created_by' => auth()->id()
         ]);
     
         return redirect()->route('purchase_requests.index')->with('success', 'Purchase request created successfully.');
@@ -126,64 +132,193 @@ class PurchaseRequestController extends Controller
     {
         try {
             $purchaseRequest = null;
-            
+    
             DB::transaction(function () use ($id, &$purchaseRequest) {
                 $purchaseRequest = PurchaseRequest::with('materials')->findOrFail($id);
-
+    
+                // Prevent double approval
+                if ($purchaseRequest->status === 'approved') {
+                    throw new \Exception("Purchase request is already approved.");
+                }
+    
+                // Handle materials if applicable
                 if ($purchaseRequest->type === 'material_stock') {
                     foreach ($purchaseRequest->materials as $material) {
+                        // Use our improved FIFO-Average function
                         $this->processFIFODeduction($purchaseRequest, $material);
                     }
                 }
-
+    
+                // Mark as approved
                 $purchaseRequest->update(['status' => 'approved']);
-
-                // Create notification for approval
+    
+                // Send notification
                 $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
-                
-                $this->notificationService->create([
-                    'type' => 'purchase_request_approved',
-                    'message' => "Purchase request for '{$itemName}' has been approved",
-                    'user_id' => $purchaseRequest->user_id,
+    
+                $this->notificationService->createForUsersWithNotificationPermission('purchase_request_approved', [
+                    'type'       => 'purchase_request_approved',
+                    'message'    => "Purchase request for '{$itemName}' has been approved",
                     'action_url' => route('purchase_requests.index'),
-                    'data' => [
+                    'data'       => [
                         'purchase_request_id' => $purchaseRequest->id,
-                        'item_name' => $itemName,
-                        'approved_by' => auth()->user()->name
-                    ]
+                        'item_name'           => $itemName,
+                        'approved_by'         => auth()->user()->name
+                    ],
+                    'created_by' => auth()->id()
                 ]);
             });
-
-            // Update project costs after successful approval
+    
+            // Update project cost after approval
             if ($purchaseRequest) {
                 $this->projectCostService->updateProjectCostsOnApproval($purchaseRequest);
             }
-
+    
             return redirect()->back()->with('success', 'Purchase Request approved successfully.');
-
+    
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());
         }
     }
-
+    
+    private function processFIFODeduction($purchaseRequest, $material)
+    {
+        $requiredQuantity = $material->pivot->quantity;
+    
+        // Prevent re-pricing if already processed
+        if ($material->pivot->weighted_avg_price !== null) {
+            \Log::info("Skipping FIFO processing for already priced material", [
+                'purchase_request_id' => $purchaseRequest->id,
+                'material_id'         => $material->id,
+                'existing_price'      => $material->pivot->weighted_avg_price
+            ]);
+            return;
+        }
+    
+        /**
+         * STEP 1: Get all stock entries for this material in FIFO order
+         */
+        $stockEntries = $material->stocks()
+            ->wherePivot('stock_id', $purchaseRequest->stock_id)
+            ->wherePivot('remaining_quantity', '>', 0)
+            ->wherePivot('status', 'active')
+            ->orderBy('material_stock.created_at', 'asc')       // ensure FIFO order
+            ->get();
+    
+        if ($stockEntries->sum('pivot.remaining_quantity') < $requiredQuantity) {
+            throw new \Exception(
+                "Insufficient stock for material: {$material->name}. Required: {$requiredQuantity}"
+            );
+        }
+    
+        /**
+         * STEP 2: Compute simple average price from ALL available stock entries (not weighted by quantity)
+         */
+        $totalPrice = 0;
+        $entryCount = 0;
+    
+        foreach ($stockEntries as $entry) {
+            $totalPrice += $entry->pivot->unit_price;
+            $entryCount++;
+        }
+    
+        $averagePrice = $entryCount > 0 ? round($totalPrice / $entryCount, 2) : 0;
+        
+        // Debug logging to understand what's happening
+        \Log::info("Simple Average Price Calculation Debug", [
+            'material_id' => $material->id,
+            'material_name' => $material->name,
+            'stock_entries_count' => $stockEntries->count(),
+            'stock_entries_details' => $stockEntries->map(function($entry) {
+                return [
+                    'id' => $entry->pivot->id,
+                    'unit_price' => $entry->pivot->unit_price,
+                    'remaining_quantity' => $entry->pivot->remaining_quantity,
+                ];
+            })->toArray(),
+            'total_price_sum' => $totalPrice,
+            'entry_count' => $entryCount,
+            'calculated_simple_average' => $averagePrice,
+            'note' => 'Simple average of unit prices (not weighted by quantity)'
+        ]);
+    
+        /**
+         * STEP 3: Deduct quantity in FIFO order but charge at average price
+         */
+        $remaining     = $requiredQuantity;
+        $consumedInfo  = [];
+    
+        foreach ($stockEntries as $entry) {
+            if ($remaining <= 0) break;
+    
+            $deduct = min($remaining, $entry->pivot->remaining_quantity);
+            $remaining -= $deduct;
+    
+            // Record for logging
+            $consumedInfo[] = [
+                'quantity'    => $deduct,
+                'unit_price'  => $entry->pivot->unit_price,
+                'entry_cost'  => $deduct * $entry->pivot->unit_price,
+                'charged_cost' => $deduct * $averagePrice // Cost actually charged to project
+            ];
+    
+            // Deduct actual quantity from the stock entry
+            $this->updateStockEntry([
+                'entry'              => $entry,
+                'quantity_to_deduct' => $deduct,
+                'unit_price'         => $entry->pivot->unit_price,
+                'total_cost'         => $deduct * $averagePrice, // Use average price for cost calculation
+            ], $purchaseRequest);
+        }
+    
+        /**
+         * STEP 4: Save to pivot
+         */
+        $purchaseRequest->materials()->updateExistingPivot($material->id, [
+            'total_cost'         => $averagePrice * $requiredQuantity,
+            'weighted_avg_price' => $averagePrice
+        ]);
+        
+        // Debug: Verify the pivot update
+        \Log::info("Pivot Update Debug", [
+            'purchase_request_id' => $purchaseRequest->id,
+            'material_id' => $material->id,
+            'average_price' => $averagePrice,
+            'required_quantity' => $requiredQuantity,
+            'total_cost_saved' => $averagePrice * $requiredQuantity,
+            'weighted_avg_price_saved' => $averagePrice
+        ]);
+    
+        \Log::info("FIFO Deduction with Average Cost Charging", [
+            'purchase_request_id' => $purchaseRequest->id,
+            'material_name'       => $material->name,
+            'required_quantity'   => $requiredQuantity,
+            'consumed_entries'    => $consumedInfo,
+            'average_price'       => $averagePrice,
+            'final_cost_charged'  => $averagePrice * $requiredQuantity,
+            'note' => 'Physical deduction follows FIFO, but project is charged at average price'
+        ]);
+    }
+    
+    
+    
     public function decline($id)
     {
         $purchaseRequest = PurchaseRequest::findOrFail($id);
-        $purchaseRequest->update(['status' => 'declined']);
+        $purchaseRequest->update(['status' => 'rejected']);
 
         // Create notification for decline
         $itemName = $this->getPurchaseRequestItemName($purchaseRequest);
         
-        $this->notificationService->create([
+        $this->notificationService->createForUsersWithNotificationPermission('purchase_request_rejected', [
             'type' => 'purchase_request_rejected',
             'message' => "Purchase request for '{$itemName}' has been declined",
-            'user_id' => $purchaseRequest->user_id,
             'action_url' => route('purchase_requests.index'),
             'data' => [
                 'purchase_request_id' => $purchaseRequest->id,
                 'item_name' => $itemName,
                 'declined_by' => auth()->user()->name
-            ]
+            ],
+            'created_by' => auth()->id()
         ]);
 
         return redirect()->back()->with('success', 'Purchase request declined.');
@@ -192,29 +327,7 @@ class PurchaseRequestController extends Controller
     /**
      * Process FIFO stock deduction for a material in purchase request
      */
-    private function processFIFODeduction($purchaseRequest, $material)
-    {
-        $requiredQuantity = $material->pivot->quantity;
-        
-        // Get FIFO entries for this material
-        $fifoResult = $material->getFIFOEntries($purchaseRequest->stock_id, $requiredQuantity);
-        
-        if (!$fifoResult['can_fulfill']) {
-            throw new \Exception("Insufficient stock for material: {$material->name}. Required: {$requiredQuantity}");
-        }
-
-        // Process FIFO deductions
-        foreach ($fifoResult['entries'] as $fifoEntry) {
-            $this->updateStockEntry($fifoEntry, $purchaseRequest);
-        }
-        
-        // Store the total cost for this material in the purchase request
-        $purchaseRequest->materials()->updateExistingPivot($material->id, [
-            'total_cost' => $fifoResult['total_cost'],
-            'weighted_avg_price' => $material->getWeightedAveragePrice($purchaseRequest->stock_id)
-        ]);
-    }
-
+ 
     /**
      * Update individual stock entry with FIFO deduction
      */

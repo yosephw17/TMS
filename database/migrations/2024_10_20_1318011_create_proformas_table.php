@@ -22,12 +22,17 @@ return new class extends Migration
             $table->decimal('after_vat_total', 15, 2);
             $table->decimal('discount', 15, 2)->nullable();
             $table->decimal('final_total', 15, 2);
-            $table->string('payment_validity')->nullable(); 
-            $table->string('delivery_terms')->nullable(); 
+            $table->string('payment_validity')->nullable();
+            $table->string('delivery_terms')->nullable();
 
             $table->enum('type', ['aluminium_profile', 'aluminium_accessories', 'work']);
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->date('date');
-           
+
+            // User tracking fields
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
+
             $table->timestamps();
         });
     }

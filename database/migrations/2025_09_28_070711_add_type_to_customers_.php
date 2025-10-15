@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('materials', function (Blueprint $table) {
-            $table->dropColumn('unit_price');
+        Schema::table('customers_', function (Blueprint $table) {
+            //
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('materials', function (Blueprint $table) {
-            $table->decimal('unit_price', 10, 2)->after('color');
+        Schema::table('customers_', function (Blueprint $table) {
+            //
         });
     }
 };

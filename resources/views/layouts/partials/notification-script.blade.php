@@ -155,7 +155,7 @@ class GlobalNotificationManager {
         }
         
         // Load notifications when dropdown is opened
-        const notificationDropdown = document.querySelector('[data-bs-toggle="dropdown"][href="#"]');
+        const notificationDropdown = document.querySelector('.nav-item.dropdown .nav-link[data-bs-toggle="dropdown"]');
         if (notificationDropdown) {
             notificationDropdown.addEventListener('shown.bs.dropdown', () => {
                 this.loadNotifications();
@@ -173,15 +173,22 @@ class GlobalNotificationManager {
             this.showLoading();
             
             const response = await fetch('/api/notifications/dropdown', {
+                method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
-            if (!response.ok) throw new Error('Failed to load notifications');
+            if (!response.ok) {
+                console.error('Response not OK:', response.status, response.statusText);
+                throw new Error(`Failed to load notifications: ${response.status}`);
+            }
             
             const data = await response.json();
+            console.log('Notifications loaded:', data);
             this.renderNotifications(data.notifications);
             this.updateAllBadges(data.unread_count);
             
@@ -243,8 +250,10 @@ class GlobalNotificationManager {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (response.ok) {
@@ -266,8 +275,10 @@ class GlobalNotificationManager {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (response.ok) {
@@ -287,14 +298,18 @@ class GlobalNotificationManager {
     async updateUnreadCount() {
         try {
             const response = await fetch('/api/notifications/unread-count', {
+                method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (response.ok) {
                 const data = await response.json();
+                console.log('Unread count:', data.count);
                 this.updateAllBadges(data.count);
             }
         } catch (error) {

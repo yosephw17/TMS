@@ -188,11 +188,13 @@ class NotificationManager {
             this.showLoading();
             
             const response = await fetch('/api/notifications/dropdown', {
+                method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.getAuthToken()}`,
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (!response.ok) throw new Error('Failed to load notifications');
@@ -267,10 +269,11 @@ class NotificationManager {
             const response = await fetch(`/api/notifications/${id}/read`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.getAuthToken()}`,
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (response.ok) {
@@ -291,10 +294,11 @@ class NotificationManager {
             const response = await fetch('/api/notifications/mark-all-read', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.getAuthToken()}`,
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
             
             if (response.ok) {
@@ -313,11 +317,13 @@ class NotificationManager {
         if (count === null) {
             try {
                 const response = await fetch('/api/notifications/unread-count', {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${this.getAuthToken()}`,
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 
                 if (response.ok) {
@@ -365,10 +371,6 @@ class NotificationManager {
         `;
     }
     
-    getAuthToken() {
-        // Get auth token from meta tag or localStorage
-        return document.querySelector('meta[name="api-token"]')?.getAttribute('content') || '';
-    }
 }
 
 // Initialize when DOM is loaded

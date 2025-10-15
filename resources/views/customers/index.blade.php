@@ -25,6 +25,7 @@
                         <th>Name</th>
                         <th>Phone</th>
                         <th>Address</th>
+                        <th>Type</th>
                         <th width="200px">Action</th>
                     </tr>
                 </thead>
@@ -35,6 +36,11 @@
                             <td>{{ $customer->name }}</td>
                             <td>{{ $customer->phone }}</td>
                             <td>{{ $customer->address }}</td>
+                            <td>
+                                <span class="badge {{ $customer->type === 'project' ? 'bg-primary' : 'bg-success' }}">
+                                    {{ $customer->type_display }}
+                                </span>
+                            </td>
                             <td>
                                 @can('customer-view')
                                     <button class="btn btn-sm btn-info" data-bs-toggle="modal"
@@ -57,7 +63,7 @@
                                 @endcan
                                 @can('project-view')
                                     <a href="{{ route('projects.show', $customer->id) }}" class="btn btn-sm btn-primary">
-                                        View Projects
+                                        {{ $customer->type === 'material' ? 'View Materials' : 'View Projects' }}
                                     </a>
                                 @endcan
                             </td>
@@ -79,6 +85,11 @@
                                         <p><strong>Name:</strong> {{ $customer->name }}</p>
                                         <p><strong>Phone:</strong> {{ $customer->phone }}</p>
                                         <p><strong>Address:</strong> {{ $customer->address }}</p>
+                                        <p><strong>Type:</strong> 
+                                            <span class="badge {{ $customer->type === 'project' ? 'bg-primary' : 'bg-success' }}">
+                                                {{ $customer->type_display }}
+                                            </span>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -113,6 +124,17 @@
                                                 <strong>Address:</strong>
                                                 <input type="text" name="address" value="{{ $customer->address }}"
                                                     class="form-control" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <strong>Type:</strong>
+                                                <select name="type" class="form-control" required>
+                                                    <option value="project" {{ $customer->type === 'project' ? 'selected' : '' }}>
+                                                        Project Customer
+                                                    </option>
+                                                    <option value="material" {{ $customer->type === 'material' ? 'selected' : '' }}>
+                                                        Material Customer
+                                                    </option>
+                                                </select>
                                             </div>
                                             <div class="text-center">
                                                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -151,6 +173,14 @@
                         <div class="form-group">
                             <strong>Address:</strong>
                             <input type="text" name="address" placeholder="Address" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <strong>Type:</strong>
+                            <select name="type" class="form-control" required>
+                                <option value="">Select Customer Type</option>
+                                <option value="project">Project Customer</option>
+                                <option value="material">Material Customer</option>
+                            </select>
                         </div>
                         <div class="text-center">
                             <button type="submit" class="btn btn-primary">Submit</button>

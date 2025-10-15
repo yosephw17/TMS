@@ -137,43 +137,54 @@ class StockController extends Controller
         return "{$stockCode}-BATCH-{$date}-{$sequence}";
     }
 
-    /**
-     * Get materials for a specific stock (API endpoint for purchase requests)
-     */
-     /**
-     * Get materials for a specific stock (API endpoint for purchase requests)
-     */
     public function getMaterials(Stock $stock)
     {
         $materials = $stock->materials()
             ->withPivot([
-                'quantity', 'remaining_quantity', 'reference_number', 
-                'batch_number', 'supplier', 'status'
+                'id', 'quantity', 'remaining_quantity', 'reference_number', 
+                'batch_number', 'supplier', 'status', 'unit_price', 'total_price'
             ])
             ->where('material_stock.remaining_quantity', '>', 0)
             ->where('material_stock.status', 'active')
             ->get();
-
-        // Group materials by ID and sum their remaining quantities
+    
         $groupedMaterials = $materials->groupBy('id')->map(function ($materialGroup) {
-            $material = $materialGroup->first(); // Get the base material info
-            
-            // Sum all remaining quantities across all reference numbers
-            $totalRemainingQuantity = $materialGroup->sum('pivot.remaining_quantity');
-            
-            // Create a new pivot object with the summed quantity
-            $material->pivot = (object) [
-                'quantity' => $totalRemainingQuantity,
-                'remaining_quantity' => $totalRemainingQuantity,
-                'reference_count' => $materialGroup->count(),
-                'reference_numbers' => $materialGroup->pluck('pivot.reference_number')->unique()->values()->toArray()
-            ];
-            
+            $material = $materialGroup->first()->replicate(); // clone without raw pivot
+    
+            // Summations
+            $totalRemainingQuantity = $materialGroup->sum(fn($item) => (float) $item->pivot->remaining_quantity);
+            $totalOriginalQuantity  = $materialGroup->sum(fn($item) => (float) $item->pivot->quantity);
+    
+            // Weighted average price
+            $totalValue = $materialGroup->sum(fn($item) => (float) $item->pivot->remaining_quantity * (float) $item->pivot->unit_price);
+            $averagePrice = $totalRemainingQuantity > 0 ? $totalValue / $totalRemainingQuantity : 0;
+    
+            $referenceNumbers = $materialGroup->pluck('pivot.reference_number')->unique()->values()->toArray();
+    
+            // ✅ Add clean fields (instead of pivot)
+            $material->available_quantity = $totalRemainingQuantity;
+            $material->total_quantity     = $totalOriginalQuantity;
+            $material->reference_count    = $materialGroup->count();
+            $material->reference_numbers  = $referenceNumbers;
+            $material->average_unit_price = round($averagePrice, 2);
+            $material->total_value        = round($totalValue, 2);
+    
+            // Keep detailed entries for traceability
+            $material->individual_entries = $materialGroup->map(fn($item) => [
+                'reference'          => $item->pivot->reference_number,
+                'original_quantity'  => $item->pivot->quantity,
+                'remaining_quantity' => $item->pivot->remaining_quantity,
+                'unit_price'         => $item->pivot->unit_price,
+                'batch_number'       => $item->pivot->batch_number,
+                'supplier'           => $item->pivot->supplier
+            ])->toArray();
+    
             return $material;
-        })->values(); // Reset array keys
-
+        })->values();
+    
         return response()->json($groupedMaterials);
     }
+    
 
     public function removeMaterial(Request $request, $stockId, $materialId)
     {

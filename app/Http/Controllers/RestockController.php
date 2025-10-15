@@ -216,14 +216,8 @@ public function getMaterialsForPurchaseRequest(PurchaseRequest $purchaseRequest)
         $materials = $purchaseRequest->materials()
             ->get()
             ->map(function ($material) use ($purchaseRequest) {
-                // Safe fallback for weighted average price
-                $weightedPrice = 0;
-                try {
-                    $weightedPrice = $material->getWeightedAveragePrice($purchaseRequest->stock_id);
-                } catch (\Exception $e) {
-                    // Fallback to material unit price or 0
-                    $weightedPrice = $material->unit_price ?? 0;
-                }
+                // Use the simple average price stored in pivot table
+                $weightedPrice = $material->pivot->weighted_avg_price ?? 0;
 
                 return [
                     'id' => $material->id,

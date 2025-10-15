@@ -11,15 +11,20 @@ class Material extends Model
 
     protected $fillable = [
         'name', 
+        'code',
         'unit_of_measurement', 
         'unit_price', 
         'color', 
         'symbol',
-        'description'
+        'type'
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
+    ];
+
+    protected $attributes = [
+        'unit_price' => 0.00,
     ];
 
     /**
@@ -83,24 +88,23 @@ class Material extends Model
             ->wherePivot('status', 'active')
             ->wherePivotNotNull('unit_price')
             ->get();
-
+    
         if ($stockEntries->isEmpty()) {
-            return $this->unit_price ?? 0; // Fallback to base unit price
+            return $this->unit_price ?? 0;
         }
-
-        $totalValue = 0;
-        $totalQuantity = 0;
-
+    
+        // 👉 Calculate arithmetic average of all unit prices
+        $priceSum = 0;
+        $entryCount = 0;
+    
         foreach ($stockEntries as $entry) {
-            $quantity = $entry->pivot->remaining_quantity;
-            $price = $entry->pivot->unit_price;
-            
-            $totalValue += ($quantity * $price);
-            $totalQuantity += $quantity;
+            $priceSum += $entry->pivot->unit_price;
+            $entryCount++;
         }
-
-        return $totalQuantity > 0 ? round($totalValue / $totalQuantity, 2) : ($this->unit_price ?? 0);
+    
+        return $entryCount > 0 ? round($priceSum / $entryCount, 2) : ($this->unit_price ?? 0);
     }
+    
 
     /**
      * Get FIFO entries for stock deduction (First In, First Out)

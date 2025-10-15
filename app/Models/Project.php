@@ -71,7 +71,30 @@ class Project extends Model
         $otherCost = 0;
         $costBreakdown = [];
 
-        foreach ($this->purchaseRequests()->where('status', 'approved')->get() as $purchaseRequest) {
+        $approvedPurchaseRequests = $this->purchaseRequests()->where('status', 'approved')->with('materials')->get();
+        
+        \Log::info("Project Cost Calculation - Purchase Requests Debug", [
+            'project_id' => $this->id,
+            'approved_purchase_requests_count' => $approvedPurchaseRequests->count(),
+            'purchase_requests_details' => $approvedPurchaseRequests->map(function($pr) {
+                return [
+                    'id' => $pr->id,
+                    'type' => $pr->type,
+                    'materials_count' => $pr->materials->count(),
+                    'materials_details' => $pr->materials->map(function($material) {
+                        return [
+                            'material_id' => $material->id,
+                            'material_name' => $material->name,
+                            'pivot_weighted_avg_price' => $material->pivot->weighted_avg_price ?? 'null',
+                            'pivot_total_cost' => $material->pivot->total_cost ?? 'null',
+                            'pivot_quantity' => $material->pivot->quantity ?? 'null'
+                        ];
+                    })->toArray()
+                ];
+            })->toArray()
+        ]);
+        
+        foreach ($approvedPurchaseRequests as $purchaseRequest) {
             $requestCost = 0;
             
             if ($purchaseRequest->type == 'material_non_stock') {
@@ -80,9 +103,22 @@ class Project extends Model
                 
             } elseif ($purchaseRequest->type == 'material_stock' && $purchaseRequest->materials->count() > 0) {
                 foreach ($purchaseRequest->materials as $material) {
-                    $weightedPrice = $material->getWeightedAveragePrice($purchaseRequest->stock_id);
-                    $materialItemCost = $material->pivot->quantity * $weightedPrice;
+                    // Use the simple average price stored in pivot table
+                    $averagePrice = $material->pivot->weighted_avg_price ?? 0;
+                    $materialItemCost = $material->pivot->total_cost ?? ($material->pivot->quantity * $averagePrice);
                     $requestCost += $materialItemCost;
+                    
+                    \Log::info("Material Cost Calculation in Project", [
+                        'project_id' => $this->id,
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'material_id' => $material->id,
+                        'material_name' => $material->name,
+                        'average_price' => $averagePrice,
+                        'material_item_cost' => $materialItemCost,
+                        'pivot_weighted_avg_price' => $material->pivot->weighted_avg_price,
+                        'pivot_total_cost' => $material->pivot->total_cost,
+                        'pivot_quantity' => $material->pivot->quantity
+                    ]);
                 }
                 $materialCost += $requestCost;
                 
@@ -127,6 +163,21 @@ class Project extends Model
         $actualCost = $materialCost + $labourCost + $transportCost + $otherCost - $totalRestockDeduction;
         $budgetVariance = $this->total_price ? ($actualCost - $this->total_price) : 0;
         $costPercentage = $this->total_price ? ($actualCost / $this->total_price) * 100 : 0;
+
+        // Debug: Log the cost calculation
+        \Log::info("Project Cost Calculation Debug", [
+            'project_id' => $this->id,
+            'project_name' => $this->name,
+            'material_cost' => $materialCost,
+            'labour_cost' => $labourCost,
+            'transport_cost' => $transportCost,
+            'other_cost' => $otherCost,
+            'total_restock_deduction' => $totalRestockDeduction,
+            'calculated_actual_cost' => $actualCost,
+            'project_total_price' => $this->total_price,
+            'budget_variance' => $budgetVariance,
+            'cost_percentage' => $costPercentage
+        ]);
 
         // Update the project with calculated costs
         $this->update([

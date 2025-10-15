@@ -13,76 +13,41 @@
                 </div>
             </div>
             
-            <!-- Enhanced Stats Cards with KPI Design -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-3">
-                    <div class="text-center p-3 bg-light rounded-3 h-100 stats-card">
-                        <div class="text-primary fs-4 mb-2">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="fw-bold fs-2 mb-1">{{ $customersCount ?? 0 }}</div>
-                        <div class="small text-muted mb-2">Total Customers</div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-primary" style="width: {{ $customersCount > 0 ? min(($customersCount / 50) * 100, 100) : 0 }}%"></div>
-                        </div>
-                        <div class="mt-3">
-                            <a class="small text-primary text-decoration-none" href="{{ route('customers.index') }}">
-                                View All Customers <i class="fas fa-arrow-right ms-1"></i>
-                            </a>
+            <div class="row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">Customers</div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a class="small text-white stretched-link" href="{{ route('customers.index') }}">View
+                                Details</a>
+                            <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-xl-3 col-md-6 mb-3">
-                    <div class="text-center p-3 bg-light rounded-3 h-100 stats-card">
-                        <div class="text-success fs-4 mb-2">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <div class="fw-bold fs-2 mb-1">{{ $projectsCount ?? 0 }}</div>
-                        <div class="small text-muted mb-2">Active Projects</div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-success" style="width: {{ $projectsCount > 0 ? min(($projectsCount / 20) * 100, 100) : 0 }}%"></div>
-                        </div>
-                        <div class="mt-3">
-                            <a class="small text-success text-decoration-none" href="{{ route('projects.index') }}">
-                                View All Projects <i class="fas fa-arrow-right ms-1"></i>
-                            </a>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-warning text-white mb-4">
+                        <div class="card-body">Projects</div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a class="small text-white stretched-link" href="{{ route('projects.index') }}">View Details</a>
+                            <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-xl-3 col-md-6 mb-3">
-                    <div class="text-center p-3 bg-light rounded-3 h-100 stats-card">
-                        <div class="text-info fs-4 mb-2">
-                            <i class="fas fa-cogs"></i>
-                        </div>
-                        <div class="fw-bold fs-2 mb-1">{{ $servicesCount ?? 0 }}</div>
-                        <div class="small text-muted mb-2">Services Available</div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-info" style="width: {{ $servicesCount > 0 ? min(($servicesCount / 15) * 100, 100) : 0 }}%"></div>
-                        </div>
-                        <div class="mt-3">
-                            <a class="small text-info text-decoration-none" href="{{ route('services.index') }}">
-                                View All Services <i class="fas fa-arrow-right ms-1"></i>
-                            </a>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-success text-white mb-4">
+                        <div class="card-body">Services</div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a class="small text-white stretched-link" href="{{ route('services.index') }}">View Details</a>
+                            <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-xl-3 col-md-6 mb-3">
-                    <div class="text-center p-3 bg-light rounded-3 h-100 stats-card">
-                        <div class="text-warning fs-4 mb-2">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div class="fw-bold fs-2 mb-1">{{ $sellersCount ?? 0 }}</div>
-                        <div class="small text-muted mb-2">Team Members</div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-warning" style="width: {{ $sellersCount > 0 ? min(($sellersCount / 10) * 100, 100) : 0 }}%"></div>
-                        </div>
-                        <div class="mt-3">
-                            <a class="small text-warning text-decoration-none" href="{{ route('sellers.index') }}">
-                                View All Team <i class="fas fa-arrow-right ms-1"></i>
-                            </a>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-danger text-white mb-4">
+                        <div class="card-body">Sellers</div>
+                        <div class="card-footer d-flex align-items-center justify-content-between">
+                            <a class="small text-white stretched-link" href="{{ route('sellers.index') }}">View Details</a>
+                            <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                         </div>
                     </div>
                 </div>
