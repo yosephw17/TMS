@@ -147,7 +147,7 @@ class RestockController extends Controller
      */
     public function approve(RestockEntry $restockEntry)
     {
-        try {
+            try {
             DB::transaction(function () use ($restockEntry) {
                 $restockEntry->approve(Auth::id());
                 
