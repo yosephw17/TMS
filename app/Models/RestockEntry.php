@@ -141,7 +141,7 @@ class RestockEntry extends Model
     $stockEntries = \DB::table('material_stock')
         ->where('material_id', $this->material_id)
         ->where('stock_id', $this->stock_id)
-        ->where('status', 'active')
+        ->whereIn('status', ['active', 'depleted']) // Include both active and depleted entries
         ->orderBy('created_at', 'desc') // LIFO order - newest first
         ->orderBy('id', 'desc')
         ->get();
@@ -155,13 +155,13 @@ class RestockEntry extends Model
     foreach ($stockEntries as $entry) {
         if ($remainingToAdd <= 0) break;
 
-        // Calculate how much can be added to this entry (up to original quantity)
-        $availableCapacity = $entry->original_quantity - $entry->remaining_quantity;
-        $addToThisEntry = min($remainingToAdd, $availableCapacity);
+        // Calculate how much can be added to this entry (how much was previously used)
+        $usedQuantity = $entry->original_quantity - $entry->remaining_quantity;
+        $addToThisEntry = min($remainingToAdd, $usedQuantity);
 
         if ($addToThisEntry > 0) {
             $newRemainingQuantity = $entry->remaining_quantity + $addToThisEntry;
-            $newCurrentTotalValue = $newRemainingQuantity * $entry->unit_price;
+            $newCurrentTotalValue = $newRemainingQuantity * $entry->unit_price; // Use original entry unit price
 
             // Update this stock entry
             \DB::table('material_stock')
@@ -170,14 +170,15 @@ class RestockEntry extends Model
                     'remaining_quantity' => $newRemainingQuantity,
                     'current_total_value' => $newCurrentTotalValue,
                     'total_used' => $entry->total_used - $addToThisEntry, // Reduce total used
+`                    'status' => 'active', // Reactivate depleted entries when restocking`
                     'last_movement_at' => now(),
                     'movement_log' => json_encode(array_merge(
                         json_decode($entry->movement_log ?? '[]', true),
                         [[
                             'type' => 'restock_addition',
                             'quantity' => $addToThisEntry,
-                            'unit_price' => $this->unit_price,
-                            'total_value' => $addToThisEntry * $this->unit_price,
+                            'unit_price' => $entry->unit_price, // Use original entry unit price
+                            'total_value' => $addToThisEntry * $entry->unit_price, // Use original entry unit price
                             'restock_reference' => $this->restock_reference,
                             'project_id' => $this->project_id,
                             'timestamp' => now(),
@@ -191,7 +192,7 @@ class RestockEntry extends Model
             $addedInfo[] = [
                 'batch_reference' => $entry->reference_number,
                 'quantity_added' => $addToThisEntry,
-                'unit_price' => $entry->unit_price,
+                'unit_price' => $entry->unit_price, // Use original entry unit price
                 'new_remaining_quantity' => $newRemainingQuantity
             ];
 
