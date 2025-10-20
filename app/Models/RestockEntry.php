@@ -132,19 +132,39 @@ class RestockEntry extends Model
     /**
      * Add restocked quantity back to stock
      */
-   private function addToStock()
+private function addToStock()
 {
     /**
-     * STEP 1: Get all stock entries for this material in LIFO order (newest first)
-     * This is the reverse of FIFO deduction
+     * STEP 1: Get ALL stock entries regardless of status in LIFO order (newest first)
      */
     $stockEntries = \DB::table('material_stock')
         ->where('material_id', $this->material_id)
         ->where('stock_id', $this->stock_id)
-        ->where('status', 'active')
         ->orderBy('created_at', 'desc') // LIFO order - newest first
         ->orderBy('id', 'desc')
         ->get();
+
+    \Log::info("LIFO Restock - All Entries", [
+        'material_id' => $this->material_id,
+        'stock_id' => $this->stock_id,
+        'restock_reference' => $this->restock_reference,
+        'quantity_to_restock' => $this->quantity_restocked,
+        'entries_count' => $stockEntries->count(),
+        'entries_details' => $stockEntries->map(function($entry) {
+            $availableCapacity = $entry->original_quantity - $entry->remaining_quantity;
+            
+            return [
+                'id' => $entry->id,
+                'reference_number' => $entry->reference_number,
+                'original_quantity' => $entry->original_quantity,
+                'remaining_quantity' => $entry->remaining_quantity,
+                'available_capacity' => $availableCapacity,
+                'unit_price' => $entry->unit_price,
+                'created_at' => $entry->created_at,
+                'can_accept_restock' => $availableCapacity > 0 ? 'Yes' : 'No'
+            ];
+        })->toArray()
+    ]);
 
     $remainingToAdd = $this->quantity_restocked;
     $addedInfo = [];
@@ -155,11 +175,13 @@ class RestockEntry extends Model
     foreach ($stockEntries as $entry) {
         if ($remainingToAdd <= 0) break;
 
-        // Calculate how much can be added to this entry (up to original quantity)
+        // Calculate available capacity (how much was used and can be restored)
         $availableCapacity = $entry->original_quantity - $entry->remaining_quantity;
-        $addToThisEntry = min($remainingToAdd, $availableCapacity);
+        
+        // Only proceed if there's available capacity to restore
+        if ($availableCapacity > 0) {
+            $addToThisEntry = min($remainingToAdd, $availableCapacity);
 
-        if ($addToThisEntry > 0) {
             $newRemainingQuantity = $entry->remaining_quantity + $addToThisEntry;
             $newCurrentTotalValue = $newRemainingQuantity * $entry->unit_price;
 
@@ -169,21 +191,24 @@ class RestockEntry extends Model
                 ->update([
                     'remaining_quantity' => $newRemainingQuantity,
                     'current_total_value' => $newCurrentTotalValue,
-                    'total_used' => $entry->total_used - $addToThisEntry, // Reduce total used
+                    'total_used' => max(0, $entry->total_used - $addToThisEntry),
                     'last_movement_at' => now(),
+                    'status'=> 'active',
                     'movement_log' => json_encode(array_merge(
                         json_decode($entry->movement_log ?? '[]', true),
                         [[
                             'type' => 'restock_addition',
                             'quantity' => $addToThisEntry,
-                            'unit_price' => $this->unit_price,
-                            'total_value' => $addToThisEntry * $this->unit_price,
+                            'unit_price' => $entry->unit_price,
+                            'total_value' => $addToThisEntry * $entry->unit_price,
                             'restock_reference' => $this->restock_reference,
                             'project_id' => $this->project_id,
                             'timestamp' => now(),
                             'user' => $this->restockedBy->name,
-                            'notes' => "Restocked to existing batch - Reference: {$entry->reference_number}",
-                            'original_batch_reference' => $entry->reference_number
+                            'notes' => "Restocked to existing batch",
+                            'original_batch_reference' => $entry->reference_number,
+                            'previous_remaining' => $entry->remaining_quantity,
+                            'new_remaining' => $newRemainingQuantity
                         ]]
                     ))
                 ]);
@@ -192,18 +217,37 @@ class RestockEntry extends Model
                 'batch_reference' => $entry->reference_number,
                 'quantity_added' => $addToThisEntry,
                 'unit_price' => $entry->unit_price,
-                'new_remaining_quantity' => $newRemainingQuantity
+                'available_capacity' => $availableCapacity,
+                'old_remaining' => $entry->remaining_quantity,
+                'new_remaining_quantity' => $newRemainingQuantity,
+                'restored_to_full' => $newRemainingQuantity == $entry->original_quantity
             ];
 
             $remainingToAdd -= $addToThisEntry;
+            
+            \Log::info("Added to existing entry", [
+                'entry_id' => $entry->id,
+                'reference' => $entry->reference_number,
+                'quantity_added' => $addToThisEntry,
+                'remaining_to_add' => $remainingToAdd,
+                'old_remaining' => $entry->remaining_quantity,
+                'new_remaining' => $newRemainingQuantity
+            ]);
         }
     }
 
     /**
-     * STEP 3: If there's still remaining quantity after filling existing entries,
-     * create a new stock entry with the restock reference
+     * STEP 3: Only create new entry if ALL existing entries are completely full
+     * and we still have quantity to add
      */
     if ($remainingToAdd > 0) {
+        \Log::info("Creating new entry for remaining quantity", [
+            'remaining_quantity' => $remainingToAdd,
+            'reason' => $stockEntries->count() > 0 ? 
+                'All existing entries are at full capacity' : 
+                'No existing entries found for this material in this stock'
+        ]);
+        
         $newEntryId = \DB::table('material_stock')->insertGetId([
             'material_id' => $this->material_id,
             'stock_id' => $this->stock_id,
@@ -230,7 +274,9 @@ class RestockEntry extends Model
                 'project_id' => $this->project_id,
                 'timestamp' => now(),
                 'user' => $this->restockedBy->name,
-                'notes' => "New restock entry created"
+                'notes' => $stockEntries->count() > 0 ? 
+                    "New restock entry created - all existing entries at full capacity" :
+                    "New restock entry created - no existing entries found"
             ]]),
             'created_at' => now(),
             'updated_at' => now()
@@ -243,10 +289,19 @@ class RestockEntry extends Model
             'new_remaining_quantity' => $remainingToAdd,
             'note' => 'New entry created'
         ];
+
+        \Log::info("New stock entry created", [
+            'new_entry_id' => $newEntryId,
+            'reference' => $this->restock_reference,
+            'quantity' => $remainingToAdd,
+            'unit_price' => $this->unit_price
+        ]);
     }
 
-    // Log the restock operation for audit
-    \Log::info("LIFO Restock Operation", [
+    /**
+     * STEP 4: Final audit logging
+     */
+    \Log::info("LIFO Restock Operation Complete", [
         'restock_reference' => $this->restock_reference,
         'material_id' => $this->material_id,
         'stock_id' => $this->stock_id,
@@ -254,10 +309,19 @@ class RestockEntry extends Model
         'unit_price' => $this->unit_price,
         'added_to_entries' => $addedInfo,
         'remaining_after_filling' => $remainingToAdd,
-        'note' => 'Restocked in LIFO order (reverse of FIFO deduction)'
+        'efficiency' => $remainingToAdd > 0 ? 'Partial' : 'Full',
+        'existing_entries_used' => count($addedInfo) - ($remainingToAdd > 0 ? 1 : 0),
+        'new_entries_created' => $remainingToAdd > 0 ? 1 : 0,
+        'note' => 'Restocked in LIFO order - filled existing entries before creating new ones'
     ]);
-}
 
+    return [
+        'total_restocked' => $this->quantity_restocked,
+        'added_to_existing' => $this->quantity_restocked - $remainingToAdd,
+        'added_to_new' => $remainingToAdd,
+        'entries_updated' => $addedInfo
+    ];
+}
     /**
      * Get status badge color
      */

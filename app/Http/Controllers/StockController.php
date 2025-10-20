@@ -186,29 +186,16 @@ class StockController extends Controller
     }
     
 
-    public function removeMaterial(Request $request, $stockId, $materialId)
-    {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
+        public function removeMaterial(Request $request, $stockId, $materialId)
+        {
+         
+            $stock = Stock::findOrFail($stockId);
+            $existingMaterial = $stock->materials()->where('material_id', $materialId)->firstOrFail();
 
-        $stock = Stock::findOrFail($stockId);
-        $existingMaterial = $stock->materials()->where('material_id', $materialId)->firstOrFail();
-        $existingQuantity = $existingMaterial->pivot->remaining_quantity;
-
-        $quantityToRemove = $request->input('quantity');
-        $newQuantity = $existingQuantity - $quantityToRemove;
-
-        if ($newQuantity <= 0) {
-            $stock->materials()->detach($materialId);
-        } else {
-            $stock->materials()->updateExistingPivot($materialId, [
-                'remaining_quantity' => $newQuantity
-            ]);
+                $stock->materials()->detach($materialId);
+         
+            return redirect()->route('stocks.show', $stockId)->with('success', 'Material quantity updated successfully.');
         }
-
-        return redirect()->route('stocks.show', $stockId)->with('success', 'Material quantity updated successfully.');
-    }
 
     public function update(Request $request, $id)
     {
