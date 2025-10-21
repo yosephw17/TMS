@@ -182,8 +182,9 @@ private function addToStock()
         if ($availableCapacity > 0) {
             $addToThisEntry = min($remainingToAdd, $availableCapacity);
 
+
             $newRemainingQuantity = $entry->remaining_quantity + $addToThisEntry;
-            $newCurrentTotalValue = $newRemainingQuantity * $entry->unit_price;
+            $newCurrentTotalValue = $newRemainingQuantity * $entry->unit_price; // Use original entry unit price
 
             // Update this stock entry
             \DB::table('material_stock')
@@ -192,6 +193,7 @@ private function addToStock()
                     'remaining_quantity' => $newRemainingQuantity,
                     'current_total_value' => $newCurrentTotalValue,
                     'total_used' => max(0, $entry->total_used - $addToThisEntry),
+
                     'last_movement_at' => now(),
                     'status'=> 'active',
                     'movement_log' => json_encode(array_merge(
@@ -201,6 +203,7 @@ private function addToStock()
                             'quantity' => $addToThisEntry,
                             'unit_price' => $entry->unit_price,
                             'total_value' => $addToThisEntry * $entry->unit_price,
+
                             'restock_reference' => $this->restock_reference,
                             'project_id' => $this->project_id,
                             'timestamp' => now(),
@@ -221,6 +224,7 @@ private function addToStock()
                 'old_remaining' => $entry->remaining_quantity,
                 'new_remaining_quantity' => $newRemainingQuantity,
                 'restored_to_full' => $newRemainingQuantity == $entry->original_quantity
+
             ];
 
             $remainingToAdd -= $addToThisEntry;
